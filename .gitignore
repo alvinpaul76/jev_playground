@@ -151,6 +151,8 @@ activemq-data/
 
 # Environments
 .env
+.env.*
+!.env.example
 .envrc
 .venv
 env/
@@ -218,3 +220,29 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Agent / IDE tool configuration
+# Ignore tool-local state, caches, memories, and credentials by default,
+# but keep project-level skills so the team shares them.
+.agents/*
+!.agents/skills/
+!.agents/skills/**
+
+# Claude and Devin skills/config are global/user-level, keep them out of the repo.
+.claude/
+.devin/
+
+# Secrets — private keys should never be committed (mirrors .dockerignore)
+*.pem
+*.key
+
+# Local model caches — HF weights are huge; downloaded to ~/.cache or the
+# hf-cache docker volume, but guard against a project-local HF_HOME/TRANSFORMERS_CACHE
+models/
+hf-cache/
+*.safetensors
+*.gguf
+
+# OS files
+.DS_Store
+Thumbs.db

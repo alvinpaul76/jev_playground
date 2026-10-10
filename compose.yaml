@@ -1,0 +1,36 @@
+name: jev-playground
+
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+      additional_contexts:
+        openjev: ../../tools/OpenJev
+    image: jev-playground:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      JEV_BACKEND: ${JEV_BACKEND:-hf}   # hf (local Qwen) or jev (hosted API)
+      JEV_API_KEY: ${JEV_API_KEY:-}      # only for JEV_BACKEND=jev; set in .env or your shell
+      JEV_AUTH_ENABLED: ${JEV_AUTH_ENABLED:-true}   # false = no API key required (local dev only)
+      JEV_CLIENT_API_KEYS: ${JEV_CLIENT_API_KEYS:-}   # comma-separated; required unless auth is disabled (the app refuses to start without them)
+      JEV_LOG_LEVEL: INFO
+      JEV_EXPOSE_DOCS: "true"   # local dev; the image default is false
+      # Set to the proxy address when running behind one; never "*".
+      FORWARDED_ALLOW_IPS: 127.0.0.1
+    volumes:
+      - hf-cache:/models   # model weights survive container recreation
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 4g
+    cpus: 4
+
+volumes:
+  hf-cache:

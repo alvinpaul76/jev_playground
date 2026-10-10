@@ -1,0 +1,36 @@
+[project]
+name = "jev-playground"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Alvin Paul L. Azurin", email = "alvin_azurin@yahoo.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.143.0",
+    "httpx>=0.28.1",
+    "openjev[dev,hf]>=0.1.0",
+    "pydantic-settings>=2.15.0",
+    "torch>=2.1",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.uv.sources]
+openjev = { path = "../../tools/OpenJev", editable = true }
+torch = { index = "pytorch-cpu", marker = "sys_platform == 'linux'" }
+
+[project.scripts]
+jev-playground = "jev_playground:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
