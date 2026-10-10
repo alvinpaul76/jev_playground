@@ -12,6 +12,7 @@ def make_settings(**overrides) -> Settings:
     values = {
         "log_level": "WARNING",
         "backend": "mock",
+        "expose_docs": True,
         "client_api_keys": [TEST_KEY],
         "_env_file": None,
     }

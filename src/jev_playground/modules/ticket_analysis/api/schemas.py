@@ -6,6 +6,7 @@ from jev_playground.modules.ticket_analysis.application.dto import (
     AnalyzeTicketsResult,
 )
 from jev_playground.modules.ticket_analysis.domain import entities as limits
+from jev_playground.modules.ticket_analysis.domain.entities import Ticket
 from jev_playground.modules.ticket_analysis.domain.policies import MAX_BATCH_SIZE
 
 
@@ -25,6 +26,16 @@ class TicketIn(BaseModel):
     evidence: list[Annotated[str, Field(max_length=limits.MAX_EVIDENCE_LENGTH)]] = (
         Field(default_factory=list, max_length=limits.MAX_EVIDENCE_ITEMS)
     )
+
+    def to_domain(self) -> Ticket:
+        return Ticket(
+            id=self.id,
+            title=self.title,
+            description=self.description,
+            environment=self.environment,
+            business_impact=self.business_impact,
+            evidence=tuple(self.evidence),
+        )
 
 
 class AnalyzeTicketsRequest(BaseModel):

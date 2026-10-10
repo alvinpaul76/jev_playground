@@ -1,10 +1,14 @@
 import logging
+import re
 import uuid
+from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
+from jev_playground.api.problem import PROBLEM_JSON
 from jev_playground.modules.ticket_analysis.domain.errors import (
     ClassifierUnavailable,
     DomainError,
@@ -14,12 +18,14 @@ from jev_playground.modules.ticket_analysis.domain.errors import (
 
 logger = logging.getLogger(__name__)
 
+# A client-supplied id ends up in logs and a response header: accept only a short, safe token.
+_REQUEST_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")
+
 
 class Unauthorized(Exception):
     """Missing or invalid API key. A transport concern, so not a DomainError."""
 
 
-PROBLEM_JSON = "application/problem+json"
 _STATUS: dict[type[DomainError], int] = {
     InvalidBatch: 422,
     InvalidTicket: 422,
@@ -28,7 +34,12 @@ _STATUS: dict[type[DomainError], int] = {
 
 
 def _problem(
-    status: int, title: str, detail: str, code: str, request: Request
+    status: int,
+    title: str,
+    detail: str,
+    code: str,
+    request: Request,
+    extra: dict[str, Any] | None = None,
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status,
@@ -40,6 +51,7 @@ def _problem(
             "detail": detail,
             "code": code,
             "request_id": getattr(request.state, "request_id", None),
+            **(extra or {}),
         },
     )
 
@@ -48,7 +60,8 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+        supplied = request.headers.get("x-request-id", "")
+        request_id = supplied if _REQUEST_ID.fullmatch(supplied) else uuid.uuid4().hex
         request.state.request_id = request_id
         try:
             response = await call_next(request)
@@ -75,6 +88,24 @@ def register_error_handlers(app: FastAPI) -> None:
         )
         response.headers["WWW-Authenticate"] = "ApiKey"
         return response
+
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation_error(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        # Field locations and messages only: the default body echoes the submitted input.
+        errors = [
+            {"loc": [str(part) for part in err["loc"]], "msg": err["msg"]}
+            for err in exc.errors()
+        ]
+        return _problem(
+            422,
+            "Validation error",
+            "The request body is not valid.",
+            "validation_error",
+            request,
+            extra={"errors": errors},
+        )
 
     @app.exception_handler(DomainError)
     async def handle_domain_error(request: Request, exc: DomainError) -> JSONResponse:

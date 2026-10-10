@@ -35,7 +35,11 @@ class Settings(BaseSettings):
     # Set to false to run /api/v1/* without a key (local development only).
     auth_enabled: bool = True
 
-    expose_docs: bool = True
+    # Interactive docs and the OpenAPI schema are off unless asked for (local development).
+    expose_docs: bool = False
+    # Largest accepted request body. A full batch is well under 1 MiB; field limits only
+    # apply after the body is read, so this bounds memory first.
+    max_request_bytes: int = Field(default=2_097_152, ge=1_024)
     log_level: str = "INFO"
     host: str = "127.0.0.1"
     port: int = 8000

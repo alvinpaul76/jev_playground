@@ -7,19 +7,12 @@ from jev_playground.modules.ticket_analysis.application.use_cases.analyze_ticket
     AnalyzeTickets,
 )
 from jev_playground.modules.ticket_analysis.domain.errors import ClassifierUnavailable
-from jev_playground.modules.ticket_analysis.infrastructure.openjev_classifier import (
-    OpenJevTicketClassifier,
-)
 
 
 def get_classifier(request: Request) -> TicketClassifier:
-    backend = getattr(request.app.state, "backend", None)
-    if backend is None:
-        raise ClassifierUnavailable("The model is not loaded yet.")
     classifier = getattr(request.app.state, "classifier", None)
     if classifier is None:
-        classifier = OpenJevTicketClassifier(backend)
-        request.app.state.classifier = classifier
+        raise ClassifierUnavailable("The model is not loaded yet.")
     return classifier
 
 

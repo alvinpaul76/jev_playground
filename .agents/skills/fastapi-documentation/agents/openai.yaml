@@ -1,0 +1,3 @@
+interface:
+  display_name: "FastAPI Documentation"
+  short_description: "Generate docs/ structure for a FastAPI service"

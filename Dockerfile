@@ -4,8 +4,11 @@
 # supplied as a named build context; compose.yaml does this for you):
 #   docker build --build-context openjev=../../tools/OpenJev -t jev-playground:$(git rev-parse --short HEAD) .
 
+# Refresh the pinned digests periodically (and rebuild to pick up patches):
+#   docker buildx imagetools inspect python:3.14-slim-trixie
+
 # ---- builder -------------------------------------------------------------
-FROM python:3.14-slim-trixie AS builder
+FROM python:3.14-slim-trixie@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6013ec53729170 AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -13,7 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/opt/venv
 
-COPY --from=ghcr.io/astral-sh/uv:0.12.19 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424 /uv /usr/local/bin/uv
 
 # pyproject.toml resolves openjev at ../../tools/OpenJev; mirror that layout.
 WORKDIR /build/tools/OpenJev
@@ -32,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-editable --no-dev
 
 # ---- runtime -------------------------------------------------------------
-FROM python:3.14-slim-trixie AS runtime
+FROM python:3.14-slim-trixie@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6013ec53729170 AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -40,7 +43,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     HF_HOME=/models \
     JEV_EXPOSE_DOCS=false
 
-RUN groupadd --system --gid 10001 app \
+# The digest pins the base image, so OS patches since then are applied here. pip is removed
+# because nothing installs packages at runtime and its vendored libraries trigger CVE scanners.
+RUN apt-get update \
+ && apt-get upgrade --yes --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /usr/local/lib/python3.14/site-packages/pip* /usr/local/bin/pip* \
+ && groupadd --system --gid 10001 app \
  && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app \
  && install -d -o 10001 -g 10001 /models
 

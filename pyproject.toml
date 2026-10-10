@@ -1,7 +1,7 @@
 [project]
 name = "jev-playground"
 version = "0.1.0"
-description = "Add your description here"
+description = "Batch support-ticket severity and category classification API (FastAPI + OpenJev)"
 readme = "README.md"
 authors = [
     { name = "Alvin Paul L. Azurin", email = "alvin_azurin@yahoo.com" }
@@ -10,7 +10,7 @@ requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.143.0",
     "httpx>=0.28.1",
-    "openjev[dev,hf]>=0.1.0",
+    "openjev[hf]>=0.1.0",
     "pydantic-settings>=2.15.0",
     "torch>=2.1",
     "uvicorn[standard]>=0.54.0",
@@ -26,6 +26,12 @@ jev-playground = "jev_playground:main"
 [build-system]
 requires = ["uv_build>=0.12.19,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

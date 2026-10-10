@@ -1,0 +1,6 @@
+# Local development. `docker compose up` merges this file automatically.
+# Production-like runs use the base file alone: `docker compose -f compose.yaml up -d`.
+services:
+  api:
+    environment:
+      JEV_EXPOSE_DOCS: ${JEV_EXPOSE_DOCS:-true}

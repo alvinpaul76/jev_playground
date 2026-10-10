@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 from jev_playground.api.errors import register_error_handlers
+from jev_playground.api.limits import BodySizeLimitMiddleware
 from jev_playground.api.router import router
 from jev_playground.config import Settings
 from jev_playground.lifespan import build_lifespan
@@ -29,6 +30,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.model_ready = False
     app.state.backend = None
+    app.state.classifier = None
+    # Added before the error handlers so RequestIdMiddleware wraps it and stamps its 413.
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_request_bytes)
     register_error_handlers(app)
     app.include_router(router)
     if settings.expose_docs:
