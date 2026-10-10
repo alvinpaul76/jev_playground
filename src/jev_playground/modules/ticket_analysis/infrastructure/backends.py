@@ -1,10 +1,13 @@
+from typing import cast
+
 from openjev.backends import get_backend
 
 from jev_playground.config import Settings
+from jev_playground.modules.ticket_analysis.infrastructure.backend import Backend
 from jev_playground.modules.ticket_analysis.infrastructure.jev_backend import JevBackend
 
 
-def build_backend(settings: Settings):
+def build_backend(settings: Settings) -> Backend:
     if settings.backend == "jev":
         if settings.api_key is None or not settings.api_key.get_secret_value():
             raise RuntimeError(
@@ -17,5 +20,5 @@ def build_backend(settings: Settings):
             timeout_s=settings.jev_timeout_s,
         )
     if settings.backend == "hf":
-        return get_backend("hf", model_id=settings.model_id)
-    return get_backend("mock")
+        return cast(Backend, get_backend("hf", model_id=settings.model_id))
+    return cast(Backend, get_backend("mock"))

@@ -35,8 +35,10 @@ def test_concurrent_first_requests_share_one_classifier():
             threading.Thread(target=lambda: seen.append(get_classifier(request)))
             for _ in range(8)
         ]
-        [t.start() for t in threads]
-        [t.join() for t in threads]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
     assert len({id(c) for c in seen}) == 1
 
 

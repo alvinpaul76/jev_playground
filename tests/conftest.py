@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -8,8 +10,8 @@ TEST_KEY = "test-key-0123456789-0123456789-abcdef"
 AUTH = {"X-API-Key": TEST_KEY}
 
 
-def make_settings(**overrides) -> Settings:
-    values = {
+def make_settings(**overrides: Any) -> Settings:
+    values: dict[str, Any] = {
         "log_level": "WARNING",
         "backend": "mock",
         "expose_docs": True,

@@ -10,7 +10,7 @@ from jev_playground.modules.ticket_analysis.domain.errors import ClassifierUnava
 
 
 def get_classifier(request: Request) -> TicketClassifier:
-    classifier = getattr(request.app.state, "classifier", None)
+    classifier: TicketClassifier | None = getattr(request.app.state, "classifier", None)
     if classifier is None:
         raise ClassifierUnavailable("The model is not loaded yet.")
     return classifier

@@ -1,6 +1,6 @@
 import logging
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from fastapi import FastAPI
 
@@ -13,7 +13,9 @@ from jev_playground.modules.ticket_analysis.infrastructure.openjev_classifier im
 logger = logging.getLogger(__name__)
 
 
-def build_lifespan(settings: Settings):
+def build_lifespan(
+    settings: Settings,
+) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.model_ready = False

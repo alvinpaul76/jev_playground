@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from typing import Any
 
 from openjev import Choice, SystemOneRequest
-from openjev.backends.base import Backend
 
 from jev_playground.modules.ticket_analysis.application.ports import (
     RawBatchClassification,
@@ -19,6 +18,7 @@ from jev_playground.modules.ticket_analysis.domain.value_objects import (
     Probability,
     Severity,
 )
+from jev_playground.modules.ticket_analysis.infrastructure.backend import Decider
 
 _QUESTIONS = {
     "severity": Choice(
@@ -67,7 +67,7 @@ def _state(ticket: Ticket) -> dict[str, Any]:
 
 
 class OpenJevTicketClassifier:
-    def __init__(self, backend: Backend) -> None:
+    def __init__(self, backend: Decider) -> None:
         self._backend = backend
         # HF inference is not guaranteed thread-safe; FastAPI runs sync routes in a thread pool.
         # The lock is per ticket, so concurrent requests interleave instead of queueing whole batches.

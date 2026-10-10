@@ -6,7 +6,8 @@ from jev_playground.config import Settings
 
 
 def get_settings(request: Request) -> Settings:
-    return request.app.state.settings
+    settings: Settings = request.app.state.settings
+    return settings
 
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]

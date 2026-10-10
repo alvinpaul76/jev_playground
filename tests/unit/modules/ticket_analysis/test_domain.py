@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from jev_playground.modules.ticket_analysis.domain.entities import (
@@ -25,7 +27,12 @@ def test_minimal_ticket_is_valid():
 
 @pytest.mark.parametrize("field", ["id", "title", "description"])
 def test_required_text_must_not_be_blank(field):
-    values = {"id": "T-1", "title": "t", "description": "d", field: "   "}
+    values: dict[str, Any] = {
+        "id": "T-1",
+        "title": "t",
+        "description": "d",
+        field: "   ",
+    }
     with pytest.raises(InvalidTicket):
         Ticket(**values)
 
