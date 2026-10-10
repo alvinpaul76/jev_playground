@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+  schedule:
+    # Weekly rebuild and scan: new CVEs appear against images that have not changed.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # OpenJev is a path dependency at ../../tools/OpenJev, so the layout is mirrored here.
+  OPENJEV_REPO: GPT-AGI/OpenJev
+  OPENJEV_REF: 0e7bb990211df139da13dc67aa2a7aceca311af7
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: poc/jev_playground
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: poc/jev_playground
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.OPENJEV_REPO }}
+          ref: ${{ env.OPENJEV_REF }}
+          path: tools/OpenJev
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: poc/jev_playground/uv.lock
+      - run: uv sync --locked
+      - run: uv run pytest
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+
+  image-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: poc/jev_playground
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.OPENJEV_REPO }}
+          ref: ${{ env.OPENJEV_REF }}
+          path: tools/OpenJev
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: poc/jev_playground
+          build-contexts: openjev=tools/OpenJev
+          load: true
+          # The weekly run must pick up new base-image and apt patches, so skip cached layers.
+          no-cache: ${{ github.event_name == 'schedule' }}
+          pull: ${{ github.event_name == 'schedule' }}
+          tags: jev-playground:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Trivy scan (fixable HIGH/CRITICAL fail the build)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: jev-playground:ci
+          version: v0.75.0
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
