@@ -17,9 +17,8 @@ class ResultsError(Exception):
     """A saved run cannot be written or read."""
 
 
-def save_run(
-    result: EvalResult, milestone: str, backend: str, directory: Path = RESULTS_DIR
-) -> Path:
+def check_milestone(milestone: str, directory: Path = RESULTS_DIR) -> Path:
+    """Fails fast, before a slow model run, if the name cannot be saved."""
     if not milestone.replace("-", "").replace("_", "").isalnum():
         raise ResultsError(
             f"milestone name '{milestone}' may only use letters, digits, - and _"
@@ -27,6 +26,13 @@ def save_run(
     path = directory / f"{milestone}.json"
     if path.exists():
         raise ResultsError(f"{path} already exists; pick a new milestone name")
+    return path
+
+
+def save_run(
+    result: EvalResult, milestone: str, backend: str, directory: Path = RESULTS_DIR
+) -> Path:
+    path = check_milestone(milestone, directory)
     payload = {
         "milestone": milestone,
         "date": datetime.now(UTC).date().isoformat(),

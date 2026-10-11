@@ -17,6 +17,7 @@ from evals.harness import (
 from evals.results import (
     RESULTS_DIR,
     ResultsError,
+    check_milestone,
     compare_runs,
     load_run,
     save_run,
@@ -89,9 +90,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         labeled = [item for item in labeled if item.split in wanted]
 
     settings = Settings(backend=args.backend) if args.backend else Settings()
-    if args.save and (args.results_dir / f"{args.save}.json").exists():
-        print(f"results error: milestone '{args.save}' already exists", file=sys.stderr)
-        return 2
+    if args.save:
+        try:
+            check_milestone(args.save, args.results_dir)
+        except ResultsError as exc:
+            print(f"results error: {exc}", file=sys.stderr)
+            return 2
     classifier = OpenJevTicketClassifier(build_backend(settings))
     result = evaluate(labeled, classifier)
 

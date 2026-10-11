@@ -1,0 +1,573 @@
+{
+  "milestone": "hf-qwen25-05b",
+  "date": "2026-10-11",
+  "backend": "hf",
+  "model": "openjev-hf/Qwen/Qwen2.5-0.5B-Instruct",
+  "latency_ms": 177986.9,
+  "splits": [
+    {
+      "split": "tuning",
+      "n_tickets": 12,
+      "n_ambiguous": 3,
+      "ambiguous_pct": 25.0,
+      "n_missing": 0,
+      "n_failed": 0,
+      "n_absent": 0,
+      "distributions": {
+        "severity": {
+          "medium": 5,
+          "high": 5,
+          "low": 2
+        },
+        "category": {
+          "regression": 2,
+          "financial_integrity": 2,
+          "ui": 2,
+          "security": 2,
+          "incident": 1,
+          "performance": 1,
+          "authentication": 1,
+          "feature_request": 1
+        },
+        "assigned_team": {
+          "backend": 2,
+          "payments_financial_systems": 2,
+          "frontend": 2,
+          "security": 2,
+          "devops": 3,
+          "product_management": 1
+        }
+      },
+      "unknown_pct": {
+        "severity": 0.0,
+        "category": 0.0,
+        "assigned_team": 0.0
+      },
+      "scores": {
+        "severity": {
+          "correct": 4,
+          "total": 9,
+          "accuracy": 0.4444444444444444,
+          "macro_f1": 0.6153846153846153,
+          "macro_f1_labels": 1,
+          "labels": {
+            "critical": {
+              "support": 0,
+              "predicted": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "high": {
+              "support": 3,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "medium": {
+              "support": 4,
+              "predicted": 9,
+              "precision": 0.4444444444444444,
+              "recall": 1.0,
+              "f1": 0.6153846153846153
+            },
+            "low": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "unknown": {
+              "support": 0,
+              "predicted": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          }
+        },
+        "category": {
+          "correct": 4,
+          "total": 9,
+          "accuracy": 0.4444444444444444,
+          "macro_f1": 0.5833333333333333,
+          "macro_f1_labels": 4,
+          "labels": {
+            "incident": {
+              "support": 0,
+              "predicted": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "security": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "ui": {
+              "support": 2,
+              "predicted": 1,
+              "precision": 1.0,
+              "recall": 0.5,
+              "f1": 0.6666666666666666
+            },
+            "performance": {
+              "support": 1,
+              "predicted": 3,
+              "precision": 0.3333333333333333,
+              "recall": 1.0,
+              "f1": 0.5
+            },
+            "financial_integrity": {
+              "support": 2,
+              "predicted": 1,
+              "precision": 1.0,
+              "recall": 0.5,
+              "f1": 0.6666666666666666
+            },
+            "feature_request": {
+              "support": 1,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "regression": {
+              "support": 1,
+              "predicted": 3,
+              "precision": 0.3333333333333333,
+              "recall": 1.0,
+              "f1": 0.5
+            },
+            "authentication": {
+              "support": 0,
+              "predicted": 1,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null
+            },
+            "unknown": {
+              "support": 0,
+              "predicted": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          }
+        },
+        "assigned_team": {
+          "correct": 1,
+          "total": 9,
+          "accuracy": 0.1111111111111111,
+          "macro_f1": 0.6666666666666666,
+          "macro_f1_labels": 1,
+          "labels": {
+            "backend": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "frontend": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "devops": {
+              "support": 0,
+              "predicted": 4,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null
+            },
+            "security": {
+              "support": 2,
+              "predicted": 1,
+              "precision": 1.0,
+              "recall": 0.5,
+              "f1": 0.6666666666666666
+            },
+            "product_management": {
+              "support": 1,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "tech_support": {
+              "support": 0,
+              "predicted": 4,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null
+            },
+            "payments_financial_systems": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            }
+          }
+        }
+      },
+      "misses_hidden": false,
+      "misses": [
+        {
+          "ticket_id": "HW-016",
+          "question": "assigned_team",
+          "expected": "backend",
+          "predicted": "devops",
+          "confidence": 0.4973
+        },
+        {
+          "ticket_id": "HW-017",
+          "question": "severity",
+          "expected": "high",
+          "predicted": "medium",
+          "confidence": 0.3312
+        },
+        {
+          "ticket_id": "HW-017",
+          "question": "category",
+          "expected": "financial_integrity",
+          "predicted": "performance",
+          "confidence": 0.5681
+        },
+        {
+          "ticket_id": "HW-017",
+          "question": "assigned_team",
+          "expected": "payments_financial_systems",
+          "predicted": "tech_support",
+          "confidence": 0.4238
+        },
+        {
+          "ticket_id": "HW-018",
+          "question": "severity",
+          "expected": "low",
+          "predicted": "medium",
+          "confidence": 0.3579
+        },
+        {
+          "ticket_id": "HW-018",
+          "question": "assigned_team",
+          "expected": "frontend",
+          "predicted": "devops",
+          "confidence": 0.2379
+        },
+        {
+          "ticket_id": "HW-019",
+          "question": "severity",
+          "expected": "high",
+          "predicted": "medium",
+          "confidence": 0.4602
+        },
+        {
+          "ticket_id": "HW-019",
+          "question": "category",
+          "expected": "security",
+          "predicted": "regression",
+          "confidence": 0.4375
+        },
+        {
+          "ticket_id": "HW-019",
+          "question": "assigned_team",
+          "expected": "security",
+          "predicted": "tech_support",
+          "confidence": 0.629
+        },
+        {
+          "ticket_id": "HW-021",
+          "question": "assigned_team",
+          "expected": "backend",
+          "predicted": "tech_support",
+          "confidence": 0.6999
+        },
+        {
+          "ticket_id": "HW-023",
+          "question": "category",
+          "expected": "feature_request",
+          "predicted": "performance",
+          "confidence": 0.5341
+        },
+        {
+          "ticket_id": "HW-023",
+          "question": "assigned_team",
+          "expected": "product_management",
+          "predicted": "devops",
+          "confidence": 0.4152
+        },
+        {
+          "ticket_id": "HW-024",
+          "question": "assigned_team",
+          "expected": "payments_financial_systems",
+          "predicted": "tech_support",
+          "confidence": 0.4634
+        },
+        {
+          "ticket_id": "HW-025",
+          "question": "severity",
+          "expected": "low",
+          "predicted": "medium",
+          "confidence": 0.2794
+        },
+        {
+          "ticket_id": "HW-025",
+          "question": "category",
+          "expected": "ui",
+          "predicted": "regression",
+          "confidence": 0.5545
+        },
+        {
+          "ticket_id": "HW-025",
+          "question": "assigned_team",
+          "expected": "frontend",
+          "predicted": "devops",
+          "confidence": 0.3006
+        },
+        {
+          "ticket_id": "HW-026",
+          "question": "severity",
+          "expected": "high",
+          "predicted": "medium",
+          "confidence": 0.2976
+        },
+        {
+          "ticket_id": "HW-026",
+          "question": "category",
+          "expected": "security",
+          "predicted": "authentication",
+          "confidence": 0.4976
+        }
+      ]
+    },
+    {
+      "split": "heldout",
+      "n_tickets": 18,
+      "n_ambiguous": 2,
+      "ambiguous_pct": 11.1,
+      "n_missing": 0,
+      "n_failed": 0,
+      "n_absent": 0,
+      "distributions": {
+        "severity": {
+          "high": 3,
+          "critical": 2,
+          "medium": 9,
+          "unknown": 2,
+          "low": 2
+        },
+        "category": {
+          "financial_integrity": 3,
+          "incident": 3,
+          "security": 2,
+          "authentication": 2,
+          "unknown": 3,
+          "regression": 2,
+          "performance": 2,
+          "ui": 1
+        },
+        "assigned_team": {
+          "payments_financial_systems": 3,
+          "devops": 3,
+          "security": 2,
+          "tech_support": 4,
+          "backend": 4,
+          "frontend": 1,
+          "product_management": 1
+        }
+      },
+      "unknown_pct": {
+        "severity": 11.1,
+        "category": 16.7,
+        "assigned_team": 0.0
+      },
+      "scores": {
+        "severity": {
+          "correct": 7,
+          "total": 16,
+          "accuracy": 0.4375,
+          "macro_f1": 0.6086956521739131,
+          "macro_f1_labels": 1,
+          "labels": {
+            "critical": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "high": {
+              "support": 3,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "medium": {
+              "support": 7,
+              "predicted": 16,
+              "precision": 0.4375,
+              "recall": 1.0,
+              "f1": 0.6086956521739131
+            },
+            "low": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "unknown": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            }
+          }
+        },
+        "category": {
+          "correct": 7,
+          "total": 16,
+          "accuracy": 0.4375,
+          "macro_f1": 0.5571428571428572,
+          "macro_f1_labels": 5,
+          "labels": {
+            "incident": {
+              "support": 3,
+              "predicted": 2,
+              "precision": 0.5,
+              "recall": 0.3333333333333333,
+              "f1": 0.4
+            },
+            "security": {
+              "support": 2,
+              "predicted": 3,
+              "precision": 0.6666666666666666,
+              "recall": 1.0,
+              "f1": 0.8
+            },
+            "ui": {
+              "support": 1,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "performance": {
+              "support": 1,
+              "predicted": 3,
+              "precision": 0.3333333333333333,
+              "recall": 1.0,
+              "f1": 0.5
+            },
+            "financial_integrity": {
+              "support": 3,
+              "predicted": 2,
+              "precision": 1.0,
+              "recall": 0.6666666666666666,
+              "f1": 0.8
+            },
+            "feature_request": {
+              "support": 0,
+              "predicted": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "regression": {
+              "support": 1,
+              "predicted": 6,
+              "precision": 0.16666666666666666,
+              "recall": 1.0,
+              "f1": 0.2857142857142857
+            },
+            "authentication": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "unknown": {
+              "support": 3,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            }
+          }
+        },
+        "assigned_team": {
+          "correct": 7,
+          "total": 16,
+          "accuracy": 0.4375,
+          "macro_f1": 0.5705128205128205,
+          "macro_f1_labels": 3,
+          "labels": {
+            "backend": {
+              "support": 2,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "frontend": {
+              "support": 1,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "devops": {
+              "support": 3,
+              "predicted": 10,
+              "precision": 0.3,
+              "recall": 1.0,
+              "f1": 0.4615384615384615
+            },
+            "security": {
+              "support": 2,
+              "predicted": 2,
+              "precision": 0.5,
+              "recall": 0.5,
+              "f1": 0.5
+            },
+            "product_management": {
+              "support": 1,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            },
+            "tech_support": {
+              "support": 4,
+              "predicted": 4,
+              "precision": 0.75,
+              "recall": 0.75,
+              "f1": 0.75
+            },
+            "payments_financial_systems": {
+              "support": 3,
+              "predicted": 0,
+              "precision": null,
+              "recall": 0.0,
+              "f1": null
+            }
+          }
+        }
+      },
+      "misses_hidden": true,
+      "misses": []
+    }
+  ]
+}

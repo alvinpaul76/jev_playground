@@ -691,3 +691,22 @@ def test_about_five_difficult_cases_is_enough(tmp_path):
     assert difficult(4).met and difficult(5).met
     assert not difficult(3).met
     assert difficult(3).target_text == "about 5"
+
+
+def test_a_bad_milestone_name_is_refused_before_any_model_runs(tmp_path, capsys):
+    data = write(tmp_path, line(id="A"))
+    code = main(
+        [
+            "--data",
+            str(data),
+            "--backend",
+            "mock",
+            "--save",
+            "qwen2.5",
+            "--results-dir",
+            str(tmp_path / "r"),
+        ]
+    )
+    assert code == 2
+    assert "letters, digits" in capsys.readouterr().err
+    assert not (tmp_path / "r").exists()
