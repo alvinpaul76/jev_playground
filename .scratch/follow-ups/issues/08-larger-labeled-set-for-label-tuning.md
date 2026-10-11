@@ -9,7 +9,7 @@ Triage found (2026-10-11): the old eval scripts never ran the production classif
 
 ## Split by grilling
 - [08a Eval harness for the production classifier](08a-eval-harness-for-the-production-classifier.md): resolved
-- [08b Labeled set and labeling guide](08b-labeled-set-and-labeling-guide.md): ready-for-human (labeled and baselined; one coverage gap left)
+- [08b Labeled set and labeling guide](08b-labeled-set-and-labeling-guide.md): ready-for-human (labeled and baselined; baseline-2 recorded)
 
 - [08c Report the metrics the labeling guide requires](08c-report-the-metrics-the-labeling-guide-requires.md): resolved
 
