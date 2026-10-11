@@ -3,7 +3,7 @@
 Local issue tracker (see `docs/agents/issue-tracker.md`). Each folder is one feature: `spec.md` records the why and the decisions, `issues/NN-*.md` are the pieces of work.
 `Status: resolved` means done and verified; other statuses are triage roles from `docs/agents/triage-labels.md`.
 
-Period covered: 2026-10-09 to 2026-10-11. State at the end: 75 tests passing, ruff clean, image scan clean. Committed in this repo as `df15350`, `34ecf10`, `7e235fe` and `c0a7892`.
+Period covered: 2026-10-09 to 2026-10-11. State at the end: 123 tests passing, ruff clean, image scan clean. Committed in this repo as `df15350`, `34ecf10`, `7e235fe` and `c0a7892`.
 
 | Feature | What it covers | Status |
 |---|---|---|
@@ -16,6 +16,7 @@ Period covered: 2026-10-09 to 2026-10-11. State at the end: 75 tests passing, ru
 | [documentation](documentation/spec.md) | Plain-language docs, README as project summary | resolved |
 | [agent-skills](agent-skills/spec.md) | Skill updates in the separate skills repo | resolved |
 | [ci](ci/spec.md) | GitHub Actions: pytest, ruff, image build and Trivy scan, weekly rescan | resolved |
+| [label-evaluation](label-evaluation/spec.md) | Eval harness, labeling guide, 30 labeled tickets, metrics, tuned severity descriptions | resolved |
 | [typing](typing/spec.md) | mypy, explicit ruff config, `Backend` Protocol | resolved |
 | [follow-ups](follow-ups/spec.md) | Work not done yet | open |
 
