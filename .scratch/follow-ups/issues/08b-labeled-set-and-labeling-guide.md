@@ -1,6 +1,6 @@
 # 08b Labeled set and labeling guide
 
-Status: ready-for-human
+Status: resolved
 Type: research
 Parent: 08
 
@@ -59,3 +59,6 @@ The owner writes one-sentence definitions for each severity, category and team i
 - Editing the classifier's label descriptions (that comes after a baseline is recorded).
 - Choosing a different model (follow-up 01).
 - Deleting `src/poc/ticket_analyis.py` (the owner's call).
+
+## Resolution (2026-10-11)
+All acceptance criteria are met: 30 labeled tickets (12 tuning, 18 held-out), coverage table met, files load, and baselines recorded in `evals/results/`. The owner relabeled HW-024 as `medium`; tuning was re-scored as `after-label-fix`.

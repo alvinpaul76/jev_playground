@@ -1,6 +1,6 @@
 # 08 Larger labeled set to tune label descriptions
 
-Status: ready-for-human
+Status: resolved
 Type: research
 
 ## Context
@@ -9,8 +9,11 @@ Triage found (2026-10-11): the old eval scripts never ran the production classif
 
 ## Split by grilling
 - [08a Eval harness for the production classifier](08a-eval-harness-for-the-production-classifier.md): resolved
-- [08b Labeled set and labeling guide](08b-labeled-set-and-labeling-guide.md): ready-for-human (labeled and baselined; baseline-2 recorded)
+- [08b Labeled set and labeling guide](08b-labeled-set-and-labeling-guide.md): resolved
 
 - [08c Report the metrics the labeling guide requires](08c-report-the-metrics-the-labeling-guide-requires.md): resolved
 
-This parent closes when 08b and 08c do.
+This parent closed when 08b and 08c did.
+
+## Resolution (2026-10-11)
+The harness (08a), the metrics (08c) and the labeled set (08b) exist. The severity descriptions were rewritten from the labeling guide using the tuning set only: tuning severity 44% -> 78% -> 89% (the last step is a relabel), held-out severity 38% -> 62%. Category and team descriptions were left alone (100% tuning, 94% held-out). The held-out set has been used once; a new one is needed before another tuning round. Choosing a better small model continues in 01.
