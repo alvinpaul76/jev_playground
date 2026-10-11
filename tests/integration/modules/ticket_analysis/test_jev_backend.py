@@ -10,6 +10,7 @@ from jev_playground.modules.ticket_analysis.domain.errors import ClassifierUnava
 from jev_playground.modules.ticket_analysis.domain.value_objects import (
     Category,
     Severity,
+    Team,
 )
 from jev_playground.modules.ticket_analysis.infrastructure.backends import build_backend
 from jev_playground.modules.ticket_analysis.infrastructure.jev_backend import JevBackend
@@ -37,6 +38,12 @@ API_RESPONSE = {
             "choice": "security",
             "probabilities": {"security": 0.9, "incident": 0.1},
             "confidence": 0.9,
+        },
+        "assigned_team": {
+            "type": "choice",
+            "choice": "security",
+            "probabilities": {"security": 0.8, "backend": 0.2},
+            "confidence": 0.7,
         },
     },
     "usage": {"input_tokens": None, "output_tokens": None},
@@ -75,6 +82,8 @@ def test_classifies_via_hosted_api_and_sends_wire_format():
     assert [a.ticket_id for a in raw.analyses] == ["A", "B"]
     assert raw.analyses[0].severity is Severity.HIGH
     assert raw.analyses[0].category is Category.SECURITY
+    assert raw.analyses[0].assigned_team is Team.SECURITY
+    assert raw.analyses[0].assigned_team_confidence.value == 0.7
     assert raw.model == "jev-latest"
     assert len(seen) == 2  # one hosted call per ticket
     auth, path, body = seen[0]
@@ -83,6 +92,8 @@ def test_classifies_via_hosted_api_and_sends_wire_format():
     q = body["questions"]
     assert set(q["severity"]["criteria"]) == {s.value for s in Severity}
     assert set(q["category"]["criteria"]) == {c.value for c in Category}
+    assert set(q["assigned_team"]["criteria"]) == {t.value for t in Team}
+    assert "options" not in q["assigned_team"]
     assert "options" not in q["severity"]
     assert body["state"] == {"id": "A", "title": "Leak", "description": "d"}
     assert body["model"] == "jev-latest"

@@ -6,6 +6,7 @@ from jev_playground.modules.ticket_analysis.domain.errors import ClassifierUnava
 from jev_playground.modules.ticket_analysis.domain.value_objects import (
     Category,
     Severity,
+    Team,
 )
 from jev_playground.modules.ticket_analysis.infrastructure.openjev_classifier import (
     OpenJevTicketClassifier,
@@ -24,6 +25,8 @@ def test_maps_mock_backend_response_to_domain_in_input_order():
     for a in raw.analyses:
         assert a.severity in set(Severity)
         assert a.category in set(Category)
+        assert a.assigned_team in set(Team)
+        assert 0 <= a.assigned_team_confidence.value <= 1
         assert 0 <= a.severity_confidence.value <= 1
     assert raw.model == "openjev-mock"
     assert raw.latency_ms is not None
@@ -54,7 +57,7 @@ def test_one_decision_per_ticket_without_labels_in_state():
         "evidence": ["e1"],
     }
     assert set(seen[1].state) == {"id", "title", "description"}
-    assert set(seen[0].questions) == {"severity", "category"}
+    assert set(seen[0].questions) == {"severity", "category", "assigned_team"}
 
 
 def test_vendor_errors_become_classifier_unavailable():

@@ -1,6 +1,6 @@
 # Ticket analysis API
 
-Use it to label support tickets: for each ticket it tells you how severe the problem is and what kind of problem it is, with a confidence score for each.
+Use it to label support tickets: for each ticket it tells you how severe the problem is, what kind of problem it is, and which team should handle it, with a confidence score for each.
 
 New to a word? See the [word list](../glossary.md).
 
@@ -42,20 +42,22 @@ curl -X POST localhost:8000/api/v1/ticket-analyses \
     {
       "id": "JEV-001",
       "severity": {"label": "critical", "confidence": 1.0},
-      "category": {"label": "incident", "confidence": 0.93}
+      "category": {"label": "incident", "confidence": 0.93},
+      "assigned_team": {"label": "backend", "confidence": 0.42}
     },
     {
       "id": "JEV-003",
       "severity": {"label": "low", "confidence": 1.0},
-      "category": {"label": "ui", "confidence": 1.0}
+      "category": {"label": "ui", "confidence": 1.0},
+      "assigned_team": {"label": "frontend", "confidence": 1.0}
     }
   ],
   "model": "jev-1.13.0",
-  "latency_ms": 484.5
+  "latency_ms": 482.66
 }
 ```
 
-The local model gives answers of the same shape, but its labels and confidences can differ.
+The local model gives answers of the same shape, but its labels and confidences can differ. Note the low confidence (0.42) on `JEV-001`'s team: the model was unsure between teams, so a person should check low-confidence assignments.
 
 ## What do I send?
 
@@ -71,7 +73,7 @@ The local model gives answers of the same shape, but its labels and confidences 
 
 The limits come from `domain/entities.py` and `domain/policies.py`. The whole request must also stay under the size limit; see [settings](../architecture.md#settings).
 
-Do not send `severity` or `category`. They are the answers, and the service rejects them (status 422). If a label were included, the model might repeat it back instead of judging the ticket.
+Do not send `severity`, `category` or `assigned_team`. They are the answers, and the service rejects them (status 422). If a label were included, the model might repeat it back instead of judging the ticket.
 
 ## What do I get back?
 
@@ -80,7 +82,8 @@ Do not send `severity` or `category`. They are the answers, and the service reje
 | `results` | One entry per ticket, in the same order you sent them. |
 | `id` | Your ticket id, repeated so you can match it up. |
 | `severity.label` | How serious it is: `critical`, `high`, `medium`, `low` or `unknown` (not enough information to tell). |
-| `category.label` | What kind of problem: `incident`, `security`, `ui`, `performance`, `financial_integrity`, `feature_request`, `regression` or `authentication`. |
+| `category.label` | What kind of problem: `incident`, `security`, `ui`, `performance`, `financial_integrity`, `feature_request`, `regression`, `authentication` or `unknown` (not enough information to tell). |
+| `assigned_team.label` | Which team should handle it: `backend`, `frontend`, `devops`, `security`, `product_management`, `tech_support` or `payments_financial_systems`. |
 | `confidence` | A number from 0 to 1: how sure the model is. Treat it as a hint, not a promise. Small models can be unsure. |
 | `model` | Which model answered. |
 | `latency_ms` | How long the analysis of the whole batch took, in milliseconds. |
@@ -89,7 +92,7 @@ The allowed labels are defined in `domain/value_objects.py`. If the model ever r
 
 ## How does it work inside?
 
-For each ticket, the service builds a short description from the fields you sent (never from labels) and asks the model two multiple-choice questions: one for severity and one for category. Each choice comes with a one-line explanation, for example "critical: widespread outage or data exposure", which is what helps a small model pick well. The questions are in `infrastructure/openjev_classifier.py`.
+For each ticket, the service builds a short description from the fields you sent (never from labels) and asks the model three multiple-choice questions: severity, category, and which team should handle it. Each choice comes with a one-line explanation, for example "critical: widespread outage or data exposure", which is what helps a small model pick well. The questions are in `infrastructure/openjev_classifier.py`.
 
 Tickets are handled one at a time, in order. With the local model, only one ticket is being worked on at any moment, so a full batch can take several seconds. With the hosted service, each ticket is a separate call.
 

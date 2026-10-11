@@ -17,6 +17,7 @@ from jev_playground.modules.ticket_analysis.domain.value_objects import (
     Category,
     Probability,
     Severity,
+    Team,
 )
 from jev_playground.modules.ticket_analysis.infrastructure.backend import Decider
 
@@ -42,6 +43,19 @@ _QUESTIONS = {
             Category.FEATURE_REQUEST.value: "A request for new functionality",
             Category.REGRESSION.value: "Something that worked in an earlier version now fails",
             Category.AUTHENTICATION.value: "Login, session, or credential behavior",
+            Category.UNKNOWN.value: "Not enough information to choose a category",
+        },
+    ),
+    "assigned_team": Choice(
+        instructions="Which team should handle this ticket?",
+        criteria={
+            Team.BACKEND.value: "Server-side code, APIs, databases, and data processing",
+            Team.FRONTEND.value: "Web interface, layout, browser behavior, and client-side code",
+            Team.DEVOPS.value: "Releases, deployments, infrastructure, and outages affecting many users",
+            Team.SECURITY.value: "Vulnerabilities, unauthorized access, and data exposure",
+            Team.PRODUCT_MANAGEMENT.value: "Requests for new or changed features, including new interface options, and requirements",
+            Team.TECH_SUPPORT.value: "Unclear customer reports, expected behavior, and user questions",
+            Team.PAYMENTS_FINANCIAL_SYSTEMS.value: "Payments, charges, billing, and financial records",
         },
     ),
 }
@@ -84,6 +98,7 @@ class OpenJevTicketClassifier:
                     response = self._backend.decide(request)
                 severity = response.answers["severity"]
                 category = response.answers["category"]
+                team = response.answers["assigned_team"]
                 model = response.model
                 analyses.append(
                     TicketAnalysis(
@@ -95,6 +110,10 @@ class OpenJevTicketClassifier:
                         category=Category(category.choice),
                         category_confidence=Probability(
                             _clamp(category.confidence, 0.0, 1.0)
+                        ),
+                        assigned_team=Team(team.choice),
+                        assigned_team_confidence=Probability(
+                            _clamp(team.confidence, 0.0, 1.0)
                         ),
                     )
                 )

@@ -5,6 +5,7 @@ from jev_playground.modules.ticket_analysis.domain.value_objects import (
     Category,
     Probability,
     Severity,
+    Team,
 )
 
 MAX_ID_LENGTH = 64
@@ -57,3 +58,5 @@ class TicketAnalysis:
     severity_confidence: Probability
     category: Category
     category_confidence: Probability
+    assigned_team: Team
+    assigned_team_confidence: Probability

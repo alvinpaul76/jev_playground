@@ -10,7 +10,7 @@ A FastAPI playground for testing Jev and building Jev-powered APIs. Each API liv
 ## APIs
 | API | What it does | Docs |
 |---|---|---|
-| Ticket analysis | Labels support tickets by severity and category. | [Ticket analysis API](docs/apis/ticket-analysis.md) |
+| Ticket analysis | Labels support tickets by severity, category and the team that should handle them. | [Ticket analysis API](docs/apis/ticket-analysis.md) |
 
 Each API page has a step-by-step first request. Adding an API? Add a row here and a page in `docs/apis/`.
 

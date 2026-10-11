@@ -14,7 +14,11 @@ from jev_playground.modules.ticket_analysis.domain.policies import (
     MAX_BATCH_SIZE,
     ensure_valid_batch,
 )
-from jev_playground.modules.ticket_analysis.domain.value_objects import Probability
+from jev_playground.modules.ticket_analysis.domain.value_objects import (
+    Category,
+    Probability,
+    Team,
+)
 
 
 def ticket(id="T-1", **kw):
@@ -76,3 +80,19 @@ def test_probability_bounds():
     Probability(1.0)
     with pytest.raises(ValueError):
         Probability(1.1)
+
+
+def test_teams_are_slugs_matching_the_agreed_list():
+    assert [t.value for t in Team] == [
+        "backend",
+        "frontend",
+        "devops",
+        "security",
+        "product_management",
+        "tech_support",
+        "payments_financial_systems",
+    ]
+
+
+def test_category_has_an_unknown_answer_for_vague_tickets():
+    assert Category("unknown") is Category.UNKNOWN

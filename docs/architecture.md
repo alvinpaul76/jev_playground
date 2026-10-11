@@ -6,10 +6,10 @@ New to a word? See the [word list](glossary.md).
 
 ## In plain words
 
-You send the service a list of support tickets. For each ticket, it asks a language model two questions: "how severe is this?" and "what kind of problem is this?". It sends the answers back, in the same order. The service keeps no data: once it answers, it forgets the request.
+You send the service a list of support tickets. For each ticket, it asks a language model three questions: "how severe is this?", "what kind of problem is this?" and "which team should handle it?". It sends the answers back, in the same order. The service keeps no data: once it answers, it forgets the request.
 
 ```
- you ──send tickets──▶ service ──ask two questions per ticket──▶ model
+ you ──send tickets──▶ service ──ask three questions per ticket──▶ model
  you ◀──labels back─── service ◀──────────── answers ─────────────┘
 ```
 

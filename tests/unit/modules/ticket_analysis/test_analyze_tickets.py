@@ -19,6 +19,7 @@ from jev_playground.modules.ticket_analysis.domain.value_objects import (
     Category,
     Probability,
     Severity,
+    Team,
 )
 
 
@@ -39,6 +40,8 @@ class FakeClassifier:
                     severity_confidence=Probability(0.8),
                     category=Category.SECURITY,
                     category_confidence=Probability(0.7),
+                    assigned_team=Team.SECURITY,
+                    assigned_team_confidence=Probability(0.6),
                 )
                 for t in tickets
             ),
@@ -57,6 +60,7 @@ def test_returns_one_analysis_per_ticket_in_order():
     )
     assert [a.ticket_id for a in result.analyses] == ["B", "A", "C"]
     assert result.model == "fake"
+    assert all(a.assigned_team is Team.SECURITY for a in result.analyses)
 
 
 def test_invalid_batch_never_reaches_classifier():

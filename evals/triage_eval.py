@@ -7,6 +7,7 @@ SAMPLE_TICKETS = [
         "title": "API returns HTTP 500 for all users",
         "description": "After deploying version 2.4.1, the customer API started returning HTTP 500 errors for every request. Database connectivity checks are successful. Application logs show AttributeError: 'NoneType' object has no attribute 'id' in the authentication middleware.",
         "environment": "production",
+        "assigned_team": "devops",
         "severity": "critical",
         "category": "incident",
         "business_impact": "All customers are unable to access the service.",
@@ -21,6 +22,7 @@ SAMPLE_TICKETS = [
         "title": "API exposes another user's invoice",
         "description": "A user can retrieve another customer's invoice by changing the invoice_id parameter in the API request. The endpoint verifies that the requester is authenticated but does not verify invoice ownership.",
         "environment": "staging",
+        "assigned_team": "security",
         "severity": "high",
         "category": "security",
         "business_impact": "Unauthorized users may access confidential customer invoice information.",
@@ -34,6 +36,7 @@ SAMPLE_TICKETS = [
         "title": "Dashboard button is misaligned",
         "description": "On the dashboard, the Export CSV button appears approximately 8 pixels lower than the Refresh button in Chrome. Both buttons work correctly. The issue does not occur in Firefox.",
         "environment": "production",
+        "assigned_team": "frontend",
         "severity": "low",
         "category": "ui",
         "business_impact": "No functional impact has been reported. The issue is limited to visual alignment in Chrome.",
@@ -48,6 +51,7 @@ SAMPLE_TICKETS = [
         "title": "Application sometimes freezes",
         "description": "A user reports that the application occasionally freezes when opening a report. No screenshots, logs, browser information, steps to reproduce, or affected user count are provided.",
         "environment": "unknown",
+        "assigned_team": "tech support",
         "severity": "unknown",
         "category": "performance",
         "business_impact": "Unknown. The affected users and operational consequences have not been established.",
@@ -62,6 +66,7 @@ SAMPLE_TICKETS = [
         "title": "Payment marked failed but charged",
         "description": "The application displays a payment as Failed. However, the payment provider dashboard shows a successful charge, and the customer has provided a bank notification confirming the debit. The internal transaction record has no provider reference ID. The reconciliation job has not yet run.",
         "environment": "production",
+        "assigned_team": "payments & financial systems",
         "severity": "high",
         "category": "financial_integrity",
         "business_impact": "The customer may be incorrectly informed that a payment failed despite evidence of a successful charge.",
@@ -78,6 +83,7 @@ SAMPLE_TICKETS = [
         "title": "Add dark mode to the application",
         "description": "A customer requests a dark theme for the application. The current interface supports only a light theme. The product requirements do not specify dark mode, and no existing functionality is broken.",
         "environment": "production",
+        "assigned_team": "product management",
         "severity": "low",
         "category": "feature_request",
         "business_impact": "The requested enhancement may improve user preference and accessibility, but no existing business operation is disrupted.",
@@ -92,6 +98,7 @@ SAMPLE_TICKETS = [
         "title": "Export fails after a dependency upgrade",
         "description": "CSV exports worked in version 3.8.0. After upgrading the CSV processing library and releasing version 3.9.0, exports containing accented characters fail with a Unicode encoding exception. The team has not yet confirmed whether reverting the library resolves the issue.",
         "environment": "production",
+        "assigned_team": "backend",
         "severity": "medium",
         "category": "regression",
         "business_impact": "Users cannot export certain CSV files containing accented characters.",
@@ -107,6 +114,7 @@ SAMPLE_TICKETS = [
         "title": "Session expires after inactivity",
         "description": "A user reports being redirected to the login page after leaving the application idle for 30 minutes. The security specification explicitly requires sessions to expire after 30 minutes of inactivity.",
         "environment": "production",
+        "assigned_team": "tech support",
         "severity": "low",
         "category": "authentication",
         "business_impact": "The user must log in again after the configured inactivity period.",
@@ -128,6 +136,16 @@ CATEGORIES = [
     "feature_request",
     "regression",
     "authentication",
+    "unknown",
+]
+TEAMS = [
+    "backend",
+    "frontend",
+    "devops",
+    "security",
+    "product management",
+    "tech support",
+    "payments & financial systems",
 ]
 
 QUESTIONS = {
@@ -137,26 +155,44 @@ QUESTIONS = {
     "category": Choice(
         instructions="Which category best describes this ticket?", options=CATEGORIES
     ),
+    "assigned_team": Choice(
+        instructions="Which team should handle this ticket?", options=TEAMS
+    ),
 }
+
+# Choose your model:
+# - Qwen/Qwen2.5-0.5B-Instruct (small, fast)
+# - Qwen/Qwen3-0.6B (larger, more capable)
 
 backend = get_backend("hf", model_id="Qwen/Qwen2.5-0.5B-Instruct")
 
-sev_correct = cat_correct = 0
+sev_correct = cat_correct = assigned_team_correct = 0
 for ticket in SAMPLE_TICKETS:
     # strip the labels so the model judges the narrative, not the answers
     state = {k: v for k, v in ticket.items() if k not in QUESTIONS}
     resp = backend.decide(SystemOneRequest(state=state, questions=QUESTIONS))
-    sev, cat = resp.answers["severity"], resp.answers["category"]
+    sev, cat, assigned_team = (
+        resp.answers["severity"],
+        resp.answers["category"],
+        resp.answers["assigned_team"],
+    )
     sev_ok = sev.choice == ticket["severity"]
     cat_ok = cat.choice == ticket["category"]
+    assigned_team_ok = assigned_team.choice == ticket["assigned_team"]
     sev_correct += sev_ok
     cat_correct += cat_ok
+    assigned_team_correct += assigned_team_ok
     print(
         f"{ticket['id']} severity={sev.choice:<8} (exp {ticket['severity']:<8}) "
         f"{'PASS' if sev_ok else 'FAIL'} | "
         f"category={cat.choice:<20} (exp {ticket['category']:<20}) "
-        f"{'PASS' if cat_ok else 'FAIL'} ({resp.latency_ms:.0f}ms)"
+        f"{'PASS' if cat_ok else 'FAIL'} | "
+        f"assigned_team={assigned_team.choice:<20} (exp {ticket['assigned_team']:<20}) "
+        f"{'PASS' if assigned_team_ok else 'FAIL'} ({resp.latency_ms:.0f}ms)"
     )
 
 n = len(SAMPLE_TICKETS)
-print(f"\nAccuracy: severity {sev_correct}/{n}, category {cat_correct}/{n}")
+print(
+    f"\nAccuracy: severity {sev_correct}/{n}, category {cat_correct}/{n}, "
+    f"assigned_team {assigned_team_correct}/{n}"
+)

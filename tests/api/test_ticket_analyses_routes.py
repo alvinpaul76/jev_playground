@@ -35,6 +35,16 @@ def test_happy_path_returns_results_in_input_order(client):
             "unknown",
         }
         assert 0 <= x["category"]["confidence"] <= 1
+        assert x["assigned_team"]["label"] in {
+            "backend",
+            "frontend",
+            "devops",
+            "security",
+            "product_management",
+            "tech_support",
+            "payments_financial_systems",
+        }
+        assert 0 <= x["assigned_team"]["confidence"] <= 1
     assert body["model"] == "openjev-mock"
     assert "x-request-id" in r.headers
 
@@ -69,7 +79,7 @@ def test_missing_required_field_is_422(client):
     assert client.post(URL, json={"tickets": [{"id": "A"}]}).status_code == 422
 
 
-@pytest.mark.parametrize("label", ["severity", "category"])
+@pytest.mark.parametrize("label", ["severity", "category", "assigned_team"])
 def test_labels_cannot_be_sent_as_input(client, label):
     assert post(client, ticket(**{label: "high"})).status_code == 422
 

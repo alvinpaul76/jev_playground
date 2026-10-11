@@ -11,7 +11,7 @@ from jev_playground.modules.ticket_analysis.domain.policies import MAX_BATCH_SIZ
 
 
 class TicketIn(BaseModel):
-    # severity/category are outputs; sending them is rejected so they cannot leak into the prompt.
+    # severity, category and assigned_team are outputs; sending them is rejected so they cannot leak into the prompt.
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(min_length=1, max_length=limits.MAX_ID_LENGTH)
@@ -53,6 +53,7 @@ class TicketAnalysisOut(BaseModel):
     id: str
     severity: LabelOut
     category: LabelOut
+    assigned_team: LabelOut
 
 
 class AnalyzeTicketsResponse(BaseModel):
@@ -71,6 +72,10 @@ class AnalyzeTicketsResponse(BaseModel):
                     ),
                     category=LabelOut(
                         label=a.category.value, confidence=a.category_confidence.value
+                    ),
+                    assigned_team=LabelOut(
+                        label=a.assigned_team.value,
+                        confidence=a.assigned_team_confidence.value,
                     ),
                 )
                 for a in result.analyses

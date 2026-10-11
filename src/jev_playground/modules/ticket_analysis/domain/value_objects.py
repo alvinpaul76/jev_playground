@@ -19,6 +19,17 @@ class Category(StrEnum):
     FEATURE_REQUEST = "feature_request"
     REGRESSION = "regression"
     AUTHENTICATION = "authentication"
+    UNKNOWN = "unknown"
+
+
+class Team(StrEnum):
+    BACKEND = "backend"
+    FRONTEND = "frontend"
+    DEVOPS = "devops"
+    SECURITY = "security"
+    PRODUCT_MANAGEMENT = "product_management"
+    TECH_SUPPORT = "tech_support"
+    PAYMENTS_FINANCIAL_SYSTEMS = "payments_financial_systems"
 
 
 @dataclass(frozen=True, slots=True)

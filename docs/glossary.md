@@ -6,6 +6,7 @@ The technical words used in these docs, in plain language.
 |---|---|
 | API | A way for one program to ask another program to do something. |
 | API key | A long secret string that proves the caller is allowed to use the service. Treat it like a password. |
+| Assigned team | The team the model suggests should handle a ticket, for example `devops` or `frontend`. |
 | Backend | The part that actually reads the tickets: the local model, the hosted Jev service, or a fake one for tests. |
 | Batch | Several tickets sent in one request. |
 | Category | The kind of problem a ticket describes, for example `security` or `ui`. |
