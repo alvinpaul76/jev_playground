@@ -1,6 +1,6 @@
 # 01 Pick a better small model than Qwen 0.5B
 
-Status: needs-triage
+Status: resolved
 Type: research
 
 ## Context
@@ -50,3 +50,6 @@ Larger local models are much slower, and the service runs on a VPS that may not 
 - Caveat: the run shared the machine with other services (about 6.8 GiB in use), so the time may be somewhat pessimistic. It would have to be about three times faster to meet the limit.
 
 **Recommendation:** record the decision to stay on the hosted backend (`JEV_BACKEND=jev`) for real use and keep Qwen only for tests and offline smoke runs. Revisit only if the VPS gains a GPU or the 2 second limit is relaxed. Move to `resolved` on the owner's confirmation.
+
+## Resolution (2026-10-11)
+Decision (owner confirmed): stay on the hosted backend (`JEV_BACKEND=jev`) for real use. Qwen2.5-0.5B stays only for tests and offline smoke runs. Evidence: `evals/results/hf-qwen25-05b.json` against `after-tuning.json`. Revisit if the VPS gains a GPU or the 2 second per ticket limit is relaxed.

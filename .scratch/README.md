@@ -18,9 +18,7 @@ Period covered: 2026-10-09 to 2026-10-11. State at the end: 123 tests passing, r
 | [ci](ci/spec.md) | GitHub Actions: pytest, ruff, image build and Trivy scan, weekly rescan | resolved |
 | [label-evaluation](label-evaluation/spec.md) | Eval harness, labeling guide, 30 labeled tickets, metrics, tuned severity descriptions | resolved |
 | [typing](typing/spec.md) | mypy, explicit ruff config, `Backend` Protocol | resolved |
-| [follow-ups](follow-ups/spec.md) | Work not done yet | open |
+| [follow-ups](follow-ups/spec.md) | Model choice: stay on the hosted backend | resolved |
 
 ## Open items
-| Issue | Status |
-|---|---|
-| [01 Pick a better small model](follow-ups/issues/01-pick-a-better-small-model.md) | needs-triage |
+None.
