@@ -37,6 +37,13 @@ The owner writes one-sentence definitions for each severity, category and team i
 - Severity is the weak spot in both sets: the model often says `high` or `medium` where `low` or `medium` was expected (tuning misses HW-016, 018, 021, 023, 025).
 - Coverage: all targets in the guide's section 10 are met.
 
+**After tuning the severity descriptions (2026-10-11), saved as `evals/results/after-tuning.json`:**
+- The severity descriptions in `openjev_classifier.py` were rewritten from section 6 of the guide (business impact and workarounds; established risk, not possible risk), using the tuning set only, in two rounds.
+- tuning severity 44% -> 78%, macro-F1 27% -> 76%.
+- held-out (run once) severity 38% -> 62%, macro-F1 46% -> 66%; category and team unchanged at 94%.
+- Remaining tuning misses: HW-024 (predicted medium, expected high) and HW-025 (predicted medium, expected low). The held-out misses were not inspected.
+- Because held-out was run once for this milestone, a future tuning round should use a fresh held-out set.
+
 **Progress (2026-10-11):** the owner's labeling guide (version 1.1) is written, including the label definitions. 15 unlabeled hand-written candidates are drafted in `evals/candidates/`. Still to do: label them, pull and label about 15 real tickets, and create `evals/data/tuning.jsonl` and `evals/data/heldout.jsonl`.
 
 **Acceptance criteria:**

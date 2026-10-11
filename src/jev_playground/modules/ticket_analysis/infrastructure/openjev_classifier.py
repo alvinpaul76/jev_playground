@@ -23,13 +23,36 @@ from jev_playground.modules.ticket_analysis.infrastructure.backend import Decide
 
 _QUESTIONS = {
     "severity": Choice(
-        instructions="What is the severity of this ticket?",
+        instructions=(
+            "What is the severity of this ticket? Judge the business impact and "
+            "whether a workaround exists, not how urgent the reporter sounds or "
+            "whether it happened in production."
+        ),
         criteria={
-            Severity.CRITICAL.value: "Widespread outage or data exposure affecting many users",
-            Severity.HIGH.value: "Serious defect or risk with a significant business impact",
-            Severity.MEDIUM.value: "Real defect with limited impact or a workaround",
-            Severity.LOW.value: "Cosmetic, minor, or expected behavior with no real impact",
-            Severity.UNKNOWN.value: "Too little information to judge the severity",
+            Severity.CRITICAL.value: (
+                "Established (not merely possible) impact: core service unavailable to most "
+                "or all users, major data loss, serious active security exposure, or an "
+                "essential financial process failing widely; no effective workaround"
+            ),
+            Severity.HIGH.value: (
+                "A major feature or important business workflow is substantially "
+                "impaired, many users are affected, or an established risk to customer "
+                "money or data needs prompt remediation; any workaround is impractical, "
+                "incomplete or costly"
+            ),
+            Severity.MEDIUM.value: (
+                "A real but bounded problem: some functionality, a limited group of "
+                "users or a noncritical workflow is affected, and work can continue "
+                "with a reasonable workaround"
+            ),
+            Severity.LOW.value: (
+                "Minor impact such as a cosmetic defect or small inconvenience; the "
+                "function still works or a simple workaround exists"
+            ),
+            Severity.UNKNOWN.value: (
+                "Too little information to judge the business impact; not just an "
+                "unknown cause when the impact is clear"
+            ),
         },
     ),
     "category": Choice(
