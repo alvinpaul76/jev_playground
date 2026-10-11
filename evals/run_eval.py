@@ -6,12 +6,11 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from evals.coverage import coverage, format_coverage
 from evals.harness import (
     DatasetError,
     Split,
-    coverage,
     evaluate,
-    format_coverage,
     format_report,
     load_labeled_set,
 )

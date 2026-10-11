@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from evals.harness import QUESTIONS, EvalResult
+from evals.harness import QUESTIONS, EvalResult, percent
 
 RESULTS_DIR = Path(__file__).parent / "results"
 
@@ -49,10 +49,6 @@ def load_run(milestone: str, directory: Path = RESULTS_DIR) -> dict[str, Any]:
     return loaded
 
 
-def _fmt(value: float | None) -> str:
-    return "unavailable" if value is None else f"{value:.0%}"
-
-
 def _delta(old: float | None, new: float | None) -> str:
     if old is None or new is None:
         return "n/a"
@@ -81,11 +77,23 @@ def compare_runs(old: dict[str, Any], new: dict[str, Any]) -> str:
             )
         lines += ["", f"== {split['split']}"]
         for question in QUESTIONS:
-            a, b = before["scores"][question], split["scores"][question]
+            was, now = before["scores"][question], split["scores"][question]
             lines.append(
-                f"   {question:<14} accuracy {_fmt(a['accuracy'])} -> {_fmt(b['accuracy'])} "
-                f"({_delta(a['accuracy'], b['accuracy'])})   "
-                f"macro-F1 {_fmt(a['macro_f1'])} -> {_fmt(b['macro_f1'])} "
-                f"({_delta(a['macro_f1'], b['macro_f1'])})"
+                f"   {question:<14} accuracy {percent(was['accuracy'])} -> {percent(now['accuracy'])} "
+                f"({_delta(was['accuracy'], now['accuracy'])})   "
+                f"macro-F1 {percent(was['macro_f1'])} -> {percent(now['macro_f1'])} "
+                f"({_delta(was['macro_f1'], now['macro_f1'])})"
             )
+        lines.append(
+            f"   missing predictions {before.get('n_missing', 0)} -> {split.get('n_missing', 0)}"
+        )
+        for question in QUESTIONS:
+            was_labels = before["scores"][question].get("labels", {})
+            now_labels = split["scores"][question].get("labels", {})
+            for label, now_label in now_labels.items():
+                was_f1 = was_labels.get(label, {}).get("f1")
+                if was_f1 != now_label["f1"]:
+                    lines.append(
+                        f"   {question}.{label} F1 {percent(was_f1)} -> {percent(now_label['f1'])}"
+                    )
     return "\n".join(lines) + "\n"

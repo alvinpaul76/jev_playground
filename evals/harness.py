@@ -102,6 +102,20 @@ class QuestionScore:
     def accuracy(self) -> float:
         return self.correct / self.total if self.total else 0.0
 
+    @property
+    def n_with_examples(self) -> int:
+        return sum(1 for m in self.labels.values() if m.support > 0)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "correct": self.correct,
+            "total": self.total,
+            "accuracy": self.accuracy,
+            "macro_f1": self.macro_f1,
+            "macro_f1_labels": self.macro_labels,
+            "labels": {label: asdict(m) for label, m in self.labels.items()},
+        }
+
 
 @dataclass(frozen=True, slots=True)
 class SplitReport:
@@ -117,6 +131,16 @@ class SplitReport:
     @property
     def n_missing(self) -> int:
         return self.n_failed + self.n_absent
+
+    @property
+    def unknown_pct(self) -> dict[str, float]:
+        """Share of tickets whose expected label is `unknown`, per question."""
+        return {
+            q: round(100 * counts.get("unknown", 0) / self.n_tickets, 1)
+            if self.n_tickets
+            else 0.0
+            for q, counts in self.distributions.items()
+        }
 
     @property
     def ambiguous_pct(self) -> float:
@@ -148,17 +172,6 @@ def _label_metrics(
     return labels, (sum(f1s) / len(f1s) if f1s else None), len(f1s)
 
 
-def _score_dict(v: QuestionScore) -> dict[str, Any]:
-    return {
-        "correct": v.correct,
-        "total": v.total,
-        "accuracy": v.accuracy,
-        "macro_f1": v.macro_f1,
-        "macro_f1_labels": v.macro_labels,
-        "labels": {label: asdict(m) for label, m in v.labels.items()},
-    }
-
-
 @dataclass(frozen=True, slots=True)
 class EvalResult:
     splits: tuple[SplitReport, ...]
@@ -182,7 +195,8 @@ class EvalResult:
                     "n_failed": s.n_failed,
                     "n_absent": s.n_absent,
                     "distributions": s.distributions,
-                    "scores": {q: _score_dict(v) for q, v in s.scores.items()},
+                    "unknown_pct": s.unknown_pct,
+                    "scores": {q: v.to_dict() for q, v in s.scores.items()},
                     "misses_hidden": hidden_for(s),
                     "misses": [] if hidden_for(s) else [asdict(m) for m in s.misses],
                 }
@@ -301,9 +315,10 @@ def _predict(
         chunk = tuple(tickets[start : start + MAX_BATCH_SIZE])
         if run(chunk):
             continue
-        for ticket in chunk:
-            if not run((ticket,)):
-                failed.add(ticket.id)
+        if len(chunk) == 1:
+            failed.add(chunk[0].id)
+            continue
+        failed.update(t.id for t in chunk if not run((t,)))
     return predictions, failed, model, latency
 
 
@@ -389,7 +404,8 @@ _HELDOUT_NOTICE = (
 )
 
 
-def _pct(value: float | None) -> str:
+def percent(value: float | None) -> str:
+    """A whole-number percentage, or 'unavailable' when there is nothing to measure."""
     return "unavailable" if value is None else f"{value:.0%}"
 
 
@@ -410,9 +426,9 @@ def format_report(result: EvalResult, show_heldout_misses: bool = False) -> str:
             score = s.scores[question]
             lines.append(
                 f"   {question:<14} {score.correct}/{score.total}  "
-                f"{score.accuracy:.0%}   macro-F1 {_pct(score.macro_f1)}"
+                f"{score.accuracy:.0%}   macro-F1 {percent(score.macro_f1)}"
                 + (
-                    f" ({score.macro_labels} labels)"
+                    f" ({score.macro_labels} of {score.n_with_examples} labels)"
                     if score.macro_f1 is not None
                     else ""
                 )
@@ -423,14 +439,18 @@ def format_report(result: EvalResult, show_heldout_misses: bool = False) -> str:
                 f"{label} {n}" for label, n in sorted(s.distributions[question].items())
             )
             lines.append(f"     {question}: {counts}")
+        unknown = ", ".join(
+            f"{q} {v:g}%" for q, v in s.unknown_pct.items() if q != "assigned_team"
+        )
+        lines.append(f"   unknown expected: {unknown}")
         lines.append("   per label (precision / recall / F1 / expected):")
         for question in QUESTIONS:
             for label, lm in s.scores[question].labels.items():
                 if lm.support == 0 and lm.predicted == 0:
                     continue
                 lines.append(
-                    f"     {question}.{label}: {_pct(lm.precision)} / {_pct(lm.recall)} / "
-                    f"{_pct(lm.f1)} / {lm.support}"
+                    f"     {question}.{label}: {percent(lm.precision)} / {percent(lm.recall)} / "
+                    f"{percent(lm.f1)} / {lm.support}"
                 )
         if s.split is Split.HELDOUT and not show_heldout_misses:
             lines.append("   " + _HELDOUT_NOTICE.replace("\n", "\n   "))
@@ -448,66 +468,3 @@ def format_report(result: EvalResult, show_heldout_misses: bool = False) -> str:
                 )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
-
-
-# --- coverage ---------------------------------------------------------------
-
-MIN_PER_TEAM, MIN_PER_CATEGORY, MIN_PER_SEVERITY = 2, 1, 2
-MIN_DIFFICULT, MIN_TOTAL = (
-    5,
-    30,
-)  # guide section 10: "approximately 5" and "at least 30"
-
-
-@dataclass(frozen=True, slots=True)
-class CoverageRow:
-    dimension: str
-    label: str
-    count: int
-    minimum: int
-
-    @property
-    def met(self) -> bool:
-        return self.count >= self.minimum
-
-
-def coverage(labeled: Sequence[LabeledTicket]) -> list[CoverageRow]:
-    """Counts the new tickets (tuning and held-out; smoke is not counted) against the guide."""
-    items = [i for i in labeled if i.split is not Split.SMOKE]
-    minimums = {
-        "assigned_team": MIN_PER_TEAM,
-        "category": MIN_PER_CATEGORY,
-        "severity": MIN_PER_SEVERITY,
-    }
-    rows: list[CoverageRow] = []
-    for dimension, minimum in minimums.items():
-        counts = Counter(i.expected.label(dimension) for i in items)
-        rows += [
-            CoverageRow(dimension, str(m.value), counts[str(m.value)], minimum)
-            for m in LABELS[dimension]
-        ]
-    rows.append(
-        CoverageRow(
-            "ambiguous",
-            "difficult cases",
-            sum(i.ambiguous for i in items),
-            MIN_DIFFICULT,
-        )
-    )
-    rows.append(CoverageRow("total", "new tickets", len(items), MIN_TOTAL))
-    return rows
-
-
-def format_coverage(rows: Sequence[CoverageRow]) -> str:
-    lines = ["coverage of the labeled set against the labeling guide (section 10)", ""]
-    for r in rows:
-        flag = "" if r.met else "   <- below minimum"
-        lines.append(
-            f"  {r.dimension:<14} {r.label:<28} {r.count:>3} / {r.minimum}{flag}"
-        )
-    short = sum(not r.met for r in rows)
-    lines += [
-        "",
-        f"{short} of {len(rows)} targets below minimum" if short else "all targets met",
-    ]
-    return "\n".join(lines) + "\n"

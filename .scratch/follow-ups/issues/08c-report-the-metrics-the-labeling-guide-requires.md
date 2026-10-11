@@ -49,4 +49,5 @@ Decisions made while building:
 - Macro-F1 averages only labels whose F1 exists, and the report says how many labels that was. A label the model never gave has no F1 and is left out of the average, so read macro-F1 together with the per-label lines.
 - Saved runs never contain held-out misses.
 - Review follow-up: missing predictions are split into *failed* (rejected even when sent alone) and *absent* (left out of a successful reply). A failed batch is retried one ticket at a time, so one bad ticket no longer blanks its batch. A missing prediction has no confidence (shown as "no prediction").
-- Not done, by choice: `--compare` still shows only accuracy and macro-F1; the unknown-ticket percentage is not reported; the difficult-case minimum is enforced as exactly 5.
+- Second review pass: `--compare` now shows missing predictions and each label whose F1 changed; the report shows the percentage of `unknown` expected labels per question; macro-F1 says how many of the labels with tickets it averaged ("3 of 4 labels"); "about 5" difficult cases passes at 4; coverage moved to `evals/coverage.py`; one shared `percent()` formatter; a single failing ticket is no longer retried twice.
+- Not done, by choice: saved runs are still plain dictionaries (no typed contract); the `"missing"` marker is still a string.

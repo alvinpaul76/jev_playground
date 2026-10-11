@@ -4,13 +4,12 @@ from pathlib import Path
 
 import pytest
 
+from evals.coverage import coverage, format_coverage
 from evals.harness import (
     DatasetError,
     LabeledTicket,
     Split,
-    coverage,
     evaluate,
-    format_coverage,
     format_report,
     load_labeled_set,
 )
@@ -536,7 +535,7 @@ def test_coverage_lists_each_label_against_its_minimum(tmp_path):
     assert not by_key[("severity", "critical")].met
     assert by_key[("assigned_team", "backend")].minimum == 2
     assert by_key[("category", "incident")].minimum == 1
-    assert by_key[("ambiguous", "difficult cases")].count == 1
+    assert by_key[("difficult", "difficult cases")].count == 1
     assert by_key[("total", "new tickets")].minimum == 30
     text = format_coverage(rows)
     assert "severity" in text and "critical" in text and "below minimum" in text
@@ -587,9 +586,9 @@ def test_saving_over_an_existing_run_is_refused(tmp_path, capsys):
     assert "already exists" in capsys.readouterr().err
 
 
-def test_cli_compares_two_saved_runs(tmp_path, capsys):
-    base = {
-        "milestone": "baseline",
+def saved_run(milestone, severity, missing=0, labels=None):
+    return {
+        "milestone": milestone,
         "date": "2026-10-11",
         "backend": "jev",
         "model": "m1",
@@ -598,17 +597,22 @@ def test_cli_compares_two_saved_runs(tmp_path, capsys):
                 "split": "tuning",
                 "n_tickets": 12,
                 "n_ambiguous": 0,
+                "n_missing": missing,
                 "scores": {
-                    "severity": {"accuracy": 0.5, "macro_f1": 0.4},
-                    "category": {"accuracy": 0.6, "macro_f1": None},
-                    "assigned_team": {"accuracy": 0.7, "macro_f1": 0.7},
+                    "severity": {**severity, "labels": labels or {}},
+                    "category": {"accuracy": 0.6, "macro_f1": None, "labels": {}},
+                    "assigned_team": {"accuracy": 0.7, "macro_f1": 0.7, "labels": {}},
                 },
             }
         ],
     }
-    new = json.loads(json.dumps(base))
-    new["milestone"] = "tuned"
-    new["splits"][0]["scores"]["severity"] = {"accuracy": 0.75, "macro_f1": 0.5}
+
+
+def test_cli_compares_two_saved_runs(tmp_path, capsys):
+    old_labels = {"high": {"f1": 0.5}, "low": {"f1": None}, "medium": {"f1": 0.4}}
+    new_labels = {"high": {"f1": 0.8}, "low": {"f1": 0.5}, "medium": {"f1": 0.4}}
+    base = saved_run("baseline", {"accuracy": 0.5, "macro_f1": 0.4}, 2, old_labels)
+    new = saved_run("tuned", {"accuracy": 0.75, "macro_f1": 0.5}, 0, new_labels)
     (tmp_path / "baseline.json").write_text(json.dumps(base))
     (tmp_path / "tuned.json").write_text(json.dumps(new))
     code = main(["--compare", "baseline", "tuned", "--results-dir", str(tmp_path)])
@@ -617,9 +621,73 @@ def test_cli_compares_two_saved_runs(tmp_path, capsys):
     assert "baseline -> tuned" in out
     assert "severity" in out and "+25" in out
     assert "unavailable" in out
+    assert "missing predictions 2 -> 0" in out
+    assert "severity.high F1 50% -> 80%" in out
+    assert "severity.low F1 unavailable -> 50%" in out
+    assert "severity.medium" not in out  # unchanged labels are not listed
+
+
+def test_compare_copes_with_runs_saved_before_missing_counts_existed(tmp_path, capsys):
+    old = saved_run("old", {"accuracy": 0.5, "macro_f1": 0.4})
+    del old["splits"][0]["n_missing"]
+    (tmp_path / "old.json").write_text(json.dumps(old))
+    (tmp_path / "new.json").write_text(
+        json.dumps(saved_run("new", {"accuracy": 0.5, "macro_f1": 0.4}))
+    )
+    assert main(["--compare", "old", "new", "--results-dir", str(tmp_path)]) == 0
 
 
 def test_cli_coverage_prints_the_view_without_running_a_model(tmp_path, capsys):
     data = write(tmp_path, line(id="A"))
     assert main(["--data", str(data), "--coverage"]) == 0
     assert "below minimum" in capsys.readouterr().out
+
+
+# --- review follow-ups ------------------------------------------------------
+
+
+def test_unknown_tickets_are_reported_as_a_percentage_per_question(tmp_path):
+    unknown = {
+        "severity": "unknown",
+        "category": "unknown",
+        "assigned_team": "tech_support",
+    }
+    lines = [line(id="A", expected=unknown), line(id="B"), line(id="C"), line(id="D")]
+    result = evaluate(labeled(write(tmp_path, *lines)), Scripted())
+    [report] = result.splits
+    assert report.unknown_pct == {
+        "severity": 25.0,
+        "category": 25.0,
+        "assigned_team": 0.0,
+    }
+    assert "unknown expected: severity 25%, category 25%" in format_report(result)
+    assert result.to_dict()["splits"][0]["unknown_pct"]["severity"] == 25.0
+
+
+def test_macro_f1_says_how_many_labels_with_examples_it_averaged(tmp_path):
+    # high is expected but never predicted, so it has no F1 and is left out
+    lines = [line(id="A", expected=sev("high")), line(id="B", expected=sev("low"))]
+    answers = {
+        "A": ("low", "incident", "backend", 0.9),
+        "B": ("low", "incident", "backend", 0.9),
+    }
+    text = format_report(evaluate(labeled(write(tmp_path, *lines)), Scripted(answers)))
+    assert "macro-F1 67% (1 of 2 labels)" in text
+
+
+def test_a_single_failing_ticket_is_not_retried_again(tmp_path):
+    classifier = RejectsBadTickets({"A"})
+    [report] = evaluate(labeled(write(tmp_path, line(id="A"))), classifier).splits
+    assert classifier.batches == [1]
+    assert report.n_failed == 1
+
+
+def test_about_five_difficult_cases_is_enough(tmp_path):
+    def difficult(n):
+        lines = [line(id=f"T{i}", ambiguous=i < n) for i in range(6)]
+        rows = coverage(labeled(write(tmp_path, *lines, name=f"s{n}.jsonl")))
+        return next(r for r in rows if r.dimension == "difficult")
+
+    assert difficult(4).met and difficult(5).met
+    assert not difficult(3).met
+    assert difficult(3).target_text == "about 5"
