@@ -39,6 +39,9 @@ _Avoid_: Training set, dev set
 Labeled tickets never used while editing label descriptions, so their accuracy is a fair report.
 _Avoid_: Test set, validation set
 
+**Ambiguous ticket**:
+A labeled ticket whose expected label the labeler could not decide. It is kept for review but left out of accuracy.
+
 **Labeling guide**:
 The written rules a person follows to decide expected labels, kept separate from the label descriptions the model sees.
 _Avoid_: Rubric, annotation spec
