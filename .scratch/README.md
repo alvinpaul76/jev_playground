@@ -23,5 +23,5 @@ Period covered: 2026-10-09 to 2026-10-11. State at the end: 75 tests passing, ru
 | Issue | Status |
 |---|---|
 | [01 Pick a better small model](follow-ups/issues/01-pick-a-better-small-model.md) | needs-triage |
-| [08 Larger labeled set to tune label descriptions](follow-ups/issues/08-larger-labeled-set-for-label-tuning.md) | needs-info |
-| [08b Labeled set and labeling guide](follow-ups/issues/08b-labeled-set-and-labeling-guide.md) | needs-info |
+| [08 Larger labeled set to tune label descriptions](follow-ups/issues/08-larger-labeled-set-for-label-tuning.md) | ready-for-human |
+| [08b Labeled set and labeling guide](follow-ups/issues/08b-labeled-set-and-labeling-guide.md) | ready-for-human |

@@ -15,5 +15,8 @@ A repeatable command that runs the same use case the API runs over a labeled set
 - `evals/triage_eval.py` removed (superseded). `src/poc/ticket_analyis.py` is left alone; it is the owner's scratch script (grilling Q8: owner decides whether to delete it).
 - `GLOSSARY.md` created with the agreed terms (grilling Q9). `evals/` added to mypy.
 
+## Update (2026-10-11)
+Grilling Q4 settled the team rule (assign the team that can fix the cause), so JEV-001 was relabeled `devops` to `backend` in the smoke set. Team accuracy on the smoke set is now 8/8, but only because the label changed, not the model. The smoke set measures breakage, not accuracy.
+
 ## Verified by
 21 tests in `tests/evals/` (loader errors, scoring, ambiguous handling, chunking, held-out hiding, CLI on the mock backend). Live, hosted Jev, production classifier: severity 7/8, category 8/8, assigned_team 7/8, the same numbers as the earlier ad-hoc run. Misses: JEV-001 team (expected devops, predicted backend 0.96), JEV-007 severity (expected medium, predicted high 0.76).
