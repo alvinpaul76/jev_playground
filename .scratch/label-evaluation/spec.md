@@ -23,4 +23,4 @@ Saved in `evals/results/`, hosted Jev model `jev-1.13.0`:
 - Issue numbers keep their original `08` prefix (they appear in commits and tests).
 
 ## Issues
-See `issues/`. Choosing a better small model continues in [follow-ups 01](../follow-ups/issues/01-pick-a-better-small-model.md).
+See `issues/`. Issue [01](issues/01-pick-a-better-small-model.md) used the harness to choose a model: the local Qwen2.5-0.5B took about 5.9 s per ticket (limit 2 s) and scored 44% on held-out, so the decision is to stay on the hosted backend.

@@ -15,7 +15,7 @@ Type: task
 severity 7/8, category 8/8, team 7/8. The one team miss is JEV-001 (backend instead of devops).
 
 ## Caveat
-Two team descriptions (devops, product_management) were reworded after the first run (team 6/8 to 7/8). With only 8 samples, treat these numbers as a smoke test, not a benchmark. See follow-ups/08.
+Two team descriptions (devops, product_management) were reworded after the first run (team 6/8 to 7/8). With only 8 samples, treat these numbers as a smoke test, not a benchmark. See label-evaluation/08.
 
 ## Files
 `domain/value_objects.py`, `domain/entities.py`, `infrastructure/openjev_classifier.py`, `api/schemas.py`, matching tests, `evals/triage_eval.py`, `docs/`.
