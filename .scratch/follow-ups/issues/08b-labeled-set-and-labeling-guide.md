@@ -42,7 +42,8 @@ The owner writes one-sentence definitions for each severity, category and team i
 - tuning severity 44% -> 78%, macro-F1 27% -> 76%.
 - held-out (run once) severity 38% -> 62%, macro-F1 46% -> 66%; category and team unchanged at 94%.
 - After a code review the severity wording was moved closer to the guide's section 6.1 phrases (critical now says corruption and "generally unavailable" workaround; high says significant business function and the workaround note). Tuning stayed at 78%. Held-out was not re-run, so `after-tuning.json` reflects the wording before this touch-up.
-- Remaining tuning misses: HW-024 (predicted medium, expected high) and HW-025 (predicted medium, expected low). The held-out misses were not inspected.
+- Label change (owner, 2026-10-11): HW-024 severity `high` -> `medium` because a workaround exists (guide section 6.1); HW-025 stays `low` for the same reason. Tuning re-scored with the new label as `evals/results/after-label-fix.json` (tuning only): severity 89%, category 100%, team 100%. The rise from 78% comes from the relabel, not from the model, since the model had already said `medium`. Compare later runs against `after-label-fix`, not `after-tuning`, on the tuning set.
+- Tuning misses before the relabel: HW-024 (predicted medium, expected high) and HW-025 (predicted medium, expected low). The held-out misses were not inspected.
 - Because held-out was run once for this milestone, a future tuning round should use a fresh held-out set.
 
 **Progress (2026-10-11):** the owner's labeling guide (version 1.1) is written, including the label definitions. 15 unlabeled hand-written candidates are drafted in `evals/candidates/`. Still to do: label them, pull and label about 15 real tickets, and create `evals/data/tuning.jsonl` and `evals/data/heldout.jsonl`.
