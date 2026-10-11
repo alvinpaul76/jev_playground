@@ -48,7 +48,7 @@ target-version = "py314"
 
 [tool.mypy]
 python_version = "3.14"
-files = ["src", "tests"]
+files = ["src", "tests", "evals"]
 strict = true
 plugins = ["pydantic.mypy"]
 

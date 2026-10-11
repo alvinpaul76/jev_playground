@@ -34,7 +34,7 @@ Each API page has a step-by-step first request. Adding an API? Add a row here an
 ## Run the tests
 ```bash
 uv run pytest                          # no model download needed
-uv run python evals/triage_eval.py     # accuracy on 8 sample tickets (loads the local model)
+uv run python -m evals.run_eval        # label accuracy on the labeled tickets (calls the model; see evals/)
 ```
 
 ## Run it in Docker
