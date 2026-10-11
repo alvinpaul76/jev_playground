@@ -31,12 +31,20 @@ The owner writes one-sentence definitions for each severity, category and team i
 - `uv run python -m evals.run_eval`: loads all files and reports accuracy per question and split; with `--backend mock` it only checks the files.
 - The labeling guide (draft) holds the rules, the coverage table, and the empty definitions section to fill in.
 
+**Baseline (2026-10-11), saved as `evals/results/baseline.json` (backend jev, model jev-1.13.0):**
+- tuning (9 scored, 3 ambiguous): severity 44%, category 100%, assigned_team 100%.
+- held-out (16 scored, 2 ambiguous): severity 38%, category 94%, assigned_team 94%; macro-F1 46%, 95%, 94%.
+- Severity is the weak spot in both sets: the model often says `high` or `medium` where `low`/`medium` was expected.
+- Coverage: only 1 ticket has severity `unknown` (the guide asks for 2).
+
+**Progress (2026-10-11):** the owner's labeling guide (version 1.1) is written, including the label definitions. 15 unlabeled hand-written candidates are drafted in `evals/candidates/`. Still to do: label them, pull and label about 15 real tickets, and create `evals/data/tuning.jsonl` and `evals/data/heldout.jsonl`.
+
 **Acceptance criteria:**
-- [ ] Label definitions are written in the guide, in the owner's words, without copying the classifier's descriptions.
-- [ ] At least 30 labeled tickets exist: about 12 tuning, at least 18 held-out, ids unique across files.
-- [ ] Coverage table met: at least 2 per team, 1 per category, 2 per severity, about 5 hard cases.
-- [ ] `uv run python -m evals.run_eval --backend mock` loads every file without errors.
-- [ ] A first held-out accuracy per question is recorded in this issue.
+- [x] Label definitions are written in the guide, in the owner's words, without copying the classifier's descriptions.
+- [x] At least 30 labeled tickets exist: about 12 tuning, at least 18 held-out, ids unique across files.
+- [ ] Coverage table met (one gap: severity `unknown` has 1 ticket, needs 2): at least 2 per team, 1 per category, 2 per severity, about 5 hard cases.
+- [x] `uv run python -m evals.run_eval --backend mock` loads every file without errors.
+- [x] A first held-out accuracy per question is recorded in this issue.
 
 **Out of scope:**
 - Editing the classifier's label descriptions (that comes after a baseline is recorded).

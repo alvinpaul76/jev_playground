@@ -42,7 +42,7 @@ src/jev_playground/
     ├── application/     the steps of "analyze these tickets"
     ├── domain/          the business rules (limits, allowed labels), plain Python
     └── infrastructure/  the parts that talk to a model or the hosted service
-evals/                 measures how accurate the labels are on tickets a person labeled; not part of the service
+evals/                 measures how accurate the labels are on tickets a person labeled (see [evaluation](evaluation.md)); not part of the service
 tests/                 automatic checks
 ```
 

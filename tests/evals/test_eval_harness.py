@@ -8,7 +8,9 @@ from evals.harness import (
     DatasetError,
     LabeledTicket,
     Split,
+    coverage,
     evaluate,
+    format_coverage,
     format_report,
     load_labeled_set,
 )
@@ -20,6 +22,7 @@ from jev_playground.modules.ticket_analysis.domain.entities import (
     Ticket,
     TicketAnalysis,
 )
+from jev_playground.modules.ticket_analysis.domain.errors import ClassifierUnavailable
 from jev_playground.modules.ticket_analysis.domain.policies import MAX_BATCH_SIZE
 from jev_playground.modules.ticket_analysis.domain.value_objects import (
     Category,
@@ -333,3 +336,265 @@ def test_cli_json_honours_show_heldout_misses(tmp_path, capsys):
     main(["--data", str(path), "--backend", "mock", "--json", "--show-heldout-misses"])
     data = json.loads(capsys.readouterr().out)
     assert data["splits"][0]["misses_hidden"] is False
+
+
+# --- 08c: metrics the labeling guide requires -------------------------------
+
+
+def sev(label: str) -> dict[str, str]:
+    return {"severity": label, "category": "incident", "assigned_team": "backend"}
+
+
+def severity_report(tmp_path, pairs):
+    """pairs: (expected severity, predicted severity). Returns the severity score."""
+    lines = [line(id=f"T{i}", expected=sev(e)) for i, (e, _) in enumerate(pairs)]
+    answers = {
+        f"T{i}": (p, "incident", "backend", 0.9) for i, (_, p) in enumerate(pairs)
+    }
+    result = evaluate(labeled(write(tmp_path, *lines)), Scripted(answers))
+    return result.splits[0].scores["severity"]
+
+
+def test_precision_recall_f1_and_macro_f1_match_a_hand_worked_example(tmp_path):
+    # high: predicted 1x, right 1x, expected 2x -> P=1, R=1/2, F1=2/3
+    # low:  predicted 3x, right 2x, expected 2x -> P=2/3, R=1, F1=4/5
+    score = severity_report(
+        tmp_path, [("high", "high"), ("high", "low"), ("low", "low"), ("low", "low")]
+    )
+    high, low = score.labels["high"], score.labels["low"]
+    assert (high.precision, high.recall) == (1.0, 0.5)
+    assert high.f1 == pytest.approx(2 / 3)
+    assert low.precision == pytest.approx(2 / 3)
+    assert low.recall == 1.0
+    assert low.f1 == pytest.approx(0.8)
+    assert score.macro_f1 == pytest.approx((2 / 3 + 0.8) / 2)
+    assert score.macro_labels == 2
+
+
+def test_a_label_nobody_expected_or_predicted_is_unavailable_not_zero(tmp_path):
+    score = severity_report(tmp_path, [("high", "high"), ("low", "low")])
+    critical = score.labels["critical"]
+    assert (critical.precision, critical.recall, critical.f1) == (None, None, None)
+    assert critical.support == 0
+
+
+def test_a_label_predicted_but_never_expected_has_precision_zero_and_no_recall(
+    tmp_path,
+):
+    score = severity_report(tmp_path, [("high", "critical"), ("high", "high")])
+    critical = score.labels["critical"]
+    assert critical.precision == 0.0
+    assert critical.recall is None
+    assert critical.f1 is None
+
+
+def test_a_label_expected_but_never_predicted_has_no_precision(tmp_path):
+    score = severity_report(tmp_path, [("high", "low"), ("low", "low")])
+    high = score.labels["high"]
+    assert high.precision is None
+    assert high.recall == 0.0
+    assert high.f1 is None
+    assert score.macro_labels == 1  # only 'low' has an F1 to average
+
+
+def test_macro_f1_is_unavailable_when_no_label_has_an_f1(tmp_path):
+    score = severity_report(tmp_path, [("high", "low")])
+    assert score.macro_f1 is None
+
+
+def test_ambiguous_tickets_are_reported_as_a_percentage(tmp_path):
+    lines = [line(id="A", ambiguous=True), line(id="B"), line(id="C"), line(id="D")]
+    [report] = evaluate(labeled(write(tmp_path, *lines)), Scripted()).splits
+    assert report.n_ambiguous == 1
+    assert report.ambiguous_pct == 25.0
+
+
+def test_distribution_counts_expected_labels_for_every_ticket(tmp_path):
+    lines = [
+        line(id="A", expected=sev("high")),
+        line(id="B", expected=sev("high")),
+        line(id="C", expected=sev("low"), ambiguous=True),
+    ]
+    [report] = evaluate(labeled(write(tmp_path, *lines)), Scripted()).splits
+    assert report.distributions["severity"] == {"high": 2, "low": 1}
+    assert report.distributions["assigned_team"] == {"backend": 3}
+
+
+class FailsFirstBatch:
+    """Raises ClassifierUnavailable for the first batch, then answers normally."""
+
+    def __init__(self) -> None:
+        self.inner = Scripted()
+        self.calls = 0
+
+    def classify_many(self, tickets: Sequence[Ticket]) -> RawBatchClassification:
+        self.calls += 1
+        if self.calls == 1:
+            raise ClassifierUnavailable()
+        return self.inner.classify_many(tickets)
+
+
+def test_a_failed_batch_is_counted_as_missing_and_the_run_continues(tmp_path):
+    n = MAX_BATCH_SIZE + 2
+    lines = [line(id=f"T{i}") for i in range(n)]
+    classifier = FailsFirstBatch()
+    [report] = evaluate(labeled(write(tmp_path, *lines)), classifier).splits
+    assert classifier.calls == 2
+    assert report.n_missing == MAX_BATCH_SIZE
+    # missing predictions count as wrong; they are never silently dropped
+    assert report.scores["severity"].total == n
+    assert report.scores["severity"].correct == 2
+    assert {m.predicted for m in report.misses} == {"missing"}
+
+
+def test_the_report_shows_the_new_figures(tmp_path):
+    lines = [
+        line(id="A", expected=sev("low")),  # the scripted classifier says "high"
+        line(id="B", expected=sev("low"), ambiguous=True),
+    ]
+    result = evaluate(labeled(write(tmp_path, *lines)), Scripted())
+    text = format_report(result)
+    assert "1 ambiguous (50%)" in text
+    assert "macro-F1" in text
+    assert "unavailable" in text
+    assert "missing predictions: 0" in text
+    assert "expected labels" in text
+
+
+def test_json_carries_metrics_distributions_and_missing_counts(tmp_path):
+    result = evaluate(labeled(write(tmp_path, line(id="A"))), Scripted())
+    split = result.to_dict()["splits"][0]
+    assert split["n_missing"] == 0
+    assert split["ambiguous_pct"] == 0.0
+    assert split["distributions"]["severity"] == {"high": 1}
+    severity = split["scores"]["severity"]
+    assert severity["macro_f1"] == 1.0
+    assert severity["labels"]["critical"]["f1"] is None  # unavailable -> null
+
+
+# --- 08c: split must match the file name ------------------------------------
+
+
+def test_a_ticket_in_the_wrong_split_file_is_a_dataset_error(tmp_path):
+    path = write(tmp_path, line(split="heldout"), name="tuning.jsonl")
+    with pytest.raises(DatasetError, match=r"tuning\.jsonl:1.*heldout.*tuning"):
+        load_labeled_set([path])
+
+
+def test_files_with_other_names_may_hold_any_split(tmp_path):
+    [item] = load_labeled_set(
+        [write(tmp_path, line(split="heldout"), name="mine.jsonl")]
+    )
+    assert item.split is Split.HELDOUT
+
+
+def test_the_shipped_data_files_match_their_splits():
+    paths = sorted((SMOKE.parent).glob("*.jsonl"))
+    assert len(load_labeled_set(paths)) >= 8
+
+
+# --- 08c: coverage against the guide's minimums -----------------------------
+
+
+def test_coverage_lists_each_label_against_its_minimum(tmp_path):
+    lines = [
+        line(id="A", expected=sev("high")),
+        line(id="B", expected=sev("high"), ambiguous=True),
+        line(id="C", split="smoke", expected=sev("critical")),  # smoke is not counted
+    ]
+    rows = coverage(labeled(write(tmp_path, *lines)))
+    by_key = {(r.dimension, r.label): r for r in rows}
+    assert by_key[("severity", "high")].count == 2
+    assert by_key[("severity", "high")].minimum == 2
+    assert by_key[("severity", "high")].met
+    assert by_key[("severity", "critical")].count == 0
+    assert not by_key[("severity", "critical")].met
+    assert by_key[("assigned_team", "backend")].minimum == 2
+    assert by_key[("category", "incident")].minimum == 1
+    assert by_key[("ambiguous", "difficult cases")].count == 1
+    assert by_key[("total", "new tickets")].minimum == 30
+    text = format_coverage(rows)
+    assert "severity" in text and "critical" in text and "below minimum" in text
+
+
+# --- 08c: saving and comparing runs -----------------------------------------
+
+
+def test_cli_saves_a_named_run_with_date_backend_and_model(tmp_path, capsys):
+    data = write(tmp_path, line(id="A"), line(id="B", split="heldout"))
+    out = tmp_path / "results"
+    code = main(
+        [
+            "--data",
+            str(data),
+            "--backend",
+            "mock",
+            "--save",
+            "baseline",
+            "--results-dir",
+            str(out),
+        ]
+    )
+    assert code == 0
+    saved = json.loads((out / "baseline.json").read_text())
+    assert saved["milestone"] == "baseline"
+    assert saved["backend"] == "mock"
+    assert saved["model"]
+    assert saved["date"]
+    held = next(s for s in saved["splits"] if s["split"] == "heldout")
+    assert held["misses_hidden"] is True and held["misses"] == []  # never saved
+
+
+def test_saving_over_an_existing_run_is_refused(tmp_path, capsys):
+    data = write(tmp_path, line(id="A"))
+    args = [
+        "--data",
+        str(data),
+        "--backend",
+        "mock",
+        "--save",
+        "m",
+        "--results-dir",
+        str(tmp_path),
+    ]
+    assert main(args) == 0
+    assert main(args) == 2
+    assert "already exists" in capsys.readouterr().err
+
+
+def test_cli_compares_two_saved_runs(tmp_path, capsys):
+    base = {
+        "milestone": "baseline",
+        "date": "2026-10-11",
+        "backend": "jev",
+        "model": "m1",
+        "splits": [
+            {
+                "split": "tuning",
+                "n_tickets": 12,
+                "n_ambiguous": 0,
+                "scores": {
+                    "severity": {"accuracy": 0.5, "macro_f1": 0.4},
+                    "category": {"accuracy": 0.6, "macro_f1": None},
+                    "assigned_team": {"accuracy": 0.7, "macro_f1": 0.7},
+                },
+            }
+        ],
+    }
+    new = json.loads(json.dumps(base))
+    new["milestone"] = "tuned"
+    new["splits"][0]["scores"]["severity"] = {"accuracy": 0.75, "macro_f1": 0.5}
+    (tmp_path / "baseline.json").write_text(json.dumps(base))
+    (tmp_path / "tuned.json").write_text(json.dumps(new))
+    code = main(["--compare", "baseline", "tuned", "--results-dir", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "baseline -> tuned" in out
+    assert "severity" in out and "+25" in out
+    assert "unavailable" in out
+
+
+def test_cli_coverage_prints_the_view_without_running_a_model(tmp_path, capsys):
+    data = write(tmp_path, line(id="A"))
+    assert main(["--data", str(data), "--coverage"]) == 0
+    assert "below minimum" in capsys.readouterr().out

@@ -15,10 +15,13 @@ The technical words used in these docs, in plain language.
 | Endpoint | One address of the API that does one job, such as `/api/v1/ticket-analyses`. |
 | `.env` file | A private text file on your machine that holds those settings. It is never shared or committed. |
 | Environment variable | A setting handed to the program from outside, such as `JEV_BACKEND=jev`. |
+| Expected label | The label a person decided is right for a ticket. The service's answers are checked against it. |
 | Header | Extra information sent along with a request, such as the API key. |
 | Health check | A tiny address that tells you whether the service is running and ready. |
+| Held-out set | Labeled tickets never used while editing label descriptions, so their accuracy is a fair report. |
 | Image | The packed copy of the service that Docker starts containers from. |
 | JSON | A text format for structured data, written with names and values inside `{ }`. |
+| Labeled set | Tickets that have expected labels, used to measure how accurate the service is. |
 | Log | The running record the service writes about what it did, used to find problems. |
 | Model | The language model that reads a ticket and picks the labels. |
 | Problem details (RFC 9457) | The standard shape the service uses for every error: a title, a plain sentence, and a stable `code`. It is sent as `application/problem+json`. |
@@ -27,5 +30,6 @@ The technical words used in these docs, in plain language.
 | Request / response | What you send to the service, and what it sends back. |
 | Severity | How serious a ticket is: `critical`, `high`, `medium`, `low` or `unknown`. |
 | Status code | The number in every answer: 2xx worked, 4xx your request has a problem, 5xx the service has a problem. |
+| Tuning set | Labeled tickets you may look at while editing label descriptions. |
 | Validation | Checking that a request is complete and within limits before any work is done. |
 | Volume (Docker) | Storage that lives outside the container, so files such as the downloaded model survive a restart. |

@@ -44,6 +44,7 @@ docker compose up --build    # serves on 127.0.0.1:8000
 
 ## Docs
 - [How it works](docs/architecture.md): the big picture in plain words
+- [Measuring label accuracy](docs/evaluation.md): check the labels against tickets a person labeled
 - [Something went wrong?](docs/troubleshooting.md): errors and how to fix them
 - [Running it for real](docs/deployment.md): keys, choosing the model, Docker
 - [Word list](docs/glossary.md): what the technical words mean
