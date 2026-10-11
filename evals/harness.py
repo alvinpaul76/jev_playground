@@ -68,7 +68,7 @@ class Miss:
     question: str
     expected: str
     predicted: str
-    confidence: float
+    confidence: float | None  # None when there was no prediction
 
 
 MISSING = "missing"
@@ -111,7 +111,12 @@ class SplitReport:
     scores: dict[str, QuestionScore]
     misses: tuple[Miss, ...]
     distributions: dict[str, dict[str, int]] = field(default_factory=dict)
-    n_missing: int = 0
+    n_failed: int = 0  # the classifier rejected the ticket, even when sent alone
+    n_absent: int = 0  # the classifier answered but left the ticket out
+
+    @property
+    def n_missing(self) -> int:
+        return self.n_failed + self.n_absent
 
     @property
     def ambiguous_pct(self) -> float:
@@ -174,6 +179,8 @@ class EvalResult:
                     "n_ambiguous": s.n_ambiguous,
                     "ambiguous_pct": s.ambiguous_pct,
                     "n_missing": s.n_missing,
+                    "n_failed": s.n_failed,
+                    "n_absent": s.n_absent,
                     "distributions": s.distributions,
                     "scores": {q: _score_dict(v) for q, v in s.scores.items()},
                     "misses_hidden": hidden_for(s),
@@ -268,21 +275,36 @@ _ORDER = (Split.SMOKE, Split.TUNING, Split.HELDOUT)
 
 def _predict(
     classifier: TicketClassifier, tickets: Sequence[Ticket]
-) -> tuple[dict[str, TicketAnalysis], str, float]:
-    """Tickets in a batch that fails are left out of the result; they are counted as missing."""
+) -> tuple[dict[str, TicketAnalysis], set[str], str, float]:
+    """Returns the predictions and the ids of tickets the classifier rejected.
+
+    The production classifier fails a whole batch when one ticket is bad. A failed batch is
+    retried one ticket at a time, so only the bad ticket is lost.
+    """
     use_case = AnalyzeTickets(classifier)
     predictions: dict[str, TicketAnalysis] = {}
+    failed: set[str] = set()
     model, latency = "", 0.0
-    for start in range(0, len(tickets), MAX_BATCH_SIZE):
-        chunk = tuple(tickets[start : start + MAX_BATCH_SIZE])
+
+    def run(batch: tuple[Ticket, ...]) -> bool:
+        nonlocal model, latency
         try:
-            result = use_case.execute(AnalyzeTicketsInput(tickets=chunk))
+            result = use_case.execute(AnalyzeTicketsInput(tickets=batch))
         except DomainError:
-            continue
+            return False
         model = result.model
         latency += result.latency_ms or 0.0
         predictions.update({a.ticket_id: a for a in result.analyses})
-    return predictions, model, latency
+        return True
+
+    for start in range(0, len(tickets), MAX_BATCH_SIZE):
+        chunk = tuple(tickets[start : start + MAX_BATCH_SIZE])
+        if run(chunk):
+            continue
+        for ticket in chunk:
+            if not run((ticket,)):
+                failed.add(ticket.id)
+    return predictions, failed, model, latency
 
 
 def _confidence(analysis: TicketAnalysis, question: str) -> float:
@@ -292,7 +314,9 @@ def _confidence(analysis: TicketAnalysis, question: str) -> float:
 def evaluate(
     labeled: Sequence[LabeledTicket], classifier: TicketClassifier
 ) -> EvalResult:
-    predictions, model, latency = _predict(classifier, [i.ticket for i in labeled])
+    predictions, failed, model, latency = _predict(
+        classifier, [i.ticket for i in labeled]
+    )
     by_split: dict[Split, list[LabeledTicket]] = defaultdict(list)
     for item in labeled:
         by_split[item.split].append(item)
@@ -305,10 +329,14 @@ def evaluate(
         scores = {q: QuestionScore() for q in QUESTIONS}
         pairs: dict[str, list[tuple[str, str]]] = {q: [] for q in QUESTIONS}
         misses: list[Miss] = []
-        n_missing = 0
+        n_failed = n_absent = 0
         for item in items:
             analysis = predictions.get(item.ticket.id)
-            n_missing += analysis is None
+            if analysis is None:
+                if item.ticket.id in failed:
+                    n_failed += 1
+                else:
+                    n_absent += 1
             if item.ambiguous:
                 continue
             for question in QUESTIONS:
@@ -327,7 +355,7 @@ def evaluate(
                             question,
                             expected,
                             predicted,
-                            _confidence(analysis, question) if analysis else 0.0,
+                            _confidence(analysis, question) if analysis else None,
                         )
                     )
         for question in QUESTIONS:
@@ -346,7 +374,8 @@ def evaluate(
                     q: dict(Counter(i.expected.label(q) for i in items))
                     for q in QUESTIONS
                 },
-                n_missing=n_missing,
+                n_failed=n_failed,
+                n_absent=n_absent,
             )
         )
     return EvalResult(splits=tuple(reports), model=model, latency_ms=round(latency, 2))
@@ -373,7 +402,10 @@ def format_report(result: EvalResult, show_heldout_misses: bool = False) -> str:
             else ""
         )
         lines.append(f"== {s.split.value} ({s.n_tickets} tickets{ambiguous})")
-        lines.append(f"   missing predictions: {s.n_missing}")
+        lines.append(
+            f"   missing predictions: {s.n_missing} "
+            f"(failed {s.n_failed}, absent {s.n_absent})"
+        )
         for question in QUESTIONS:
             score = s.scores[question]
             lines.append(
@@ -405,9 +437,14 @@ def format_report(result: EvalResult, show_heldout_misses: bool = False) -> str:
         elif s.misses:
             lines.append("   misses:")
             for m in s.misses:
+                how_sure = (
+                    "no prediction"
+                    if m.confidence is None
+                    else f"confidence {m.confidence:.2f}"
+                )
                 lines.append(
                     f"     {m.ticket_id} {m.question}: expected={m.expected} "
-                    f"predicted={m.predicted} (confidence {m.confidence:.2f})"
+                    f"predicted={m.predicted} ({how_sure})"
                 )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"

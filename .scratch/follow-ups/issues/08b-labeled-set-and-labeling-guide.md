@@ -41,6 +41,7 @@ The owner writes one-sentence definitions for each severity, category and team i
 - The severity descriptions in `openjev_classifier.py` were rewritten from section 6 of the guide (business impact and workarounds; established risk, not possible risk), using the tuning set only, in two rounds.
 - tuning severity 44% -> 78%, macro-F1 27% -> 76%.
 - held-out (run once) severity 38% -> 62%, macro-F1 46% -> 66%; category and team unchanged at 94%.
+- After a code review the severity wording was moved closer to the guide's section 6.1 phrases (critical now says corruption and "generally unavailable" workaround; high says significant business function and the workaround note). Tuning stayed at 78%. Held-out was not re-run, so `after-tuning.json` reflects the wording before this touch-up.
 - Remaining tuning misses: HW-024 (predicted medium, expected high) and HW-025 (predicted medium, expected low). The held-out misses were not inspected.
 - Because held-out was run once for this milestone, a future tuning round should use a fresh held-out set.
 

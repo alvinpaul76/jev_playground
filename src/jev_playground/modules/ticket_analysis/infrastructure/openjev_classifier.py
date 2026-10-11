@@ -30,15 +30,17 @@ _QUESTIONS = {
         ),
         criteria={
             Severity.CRITICAL.value: (
-                "Established (not merely possible) impact: core service unavailable to most "
-                "or all users, major data loss, serious active security exposure, or an "
-                "essential financial process failing widely; no effective workaround"
+                "Established (not merely possible) exceptionally severe impact: a core "
+                "service unavailable to most or all users, major data loss or "
+                "corruption, serious active security exposure, or widespread failure of "
+                "an essential financial process; immediate attention, and an effective "
+                "workaround is generally unavailable"
             ),
             Severity.HIGH.value: (
                 "A major feature or important business workflow is substantially "
-                "impaired, many users are affected, or an established risk to customer "
-                "money or data needs prompt remediation; any workaround is impractical, "
-                "incomplete or costly"
+                "impaired, many users or a significant business function are affected, "
+                "or an established risk needs prompt remediation; a workaround may "
+                "exist but is impractical, incomplete or costly"
             ),
             Severity.MEDIUM.value: (
                 "A real but bounded problem: some functionality, a limited group of "

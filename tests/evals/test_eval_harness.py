@@ -420,31 +420,56 @@ def test_distribution_counts_expected_labels_for_every_ticket(tmp_path):
     assert report.distributions["assigned_team"] == {"backend": 3}
 
 
-class FailsFirstBatch:
-    """Raises ClassifierUnavailable for the first batch, then answers normally."""
+class RejectsBadTickets:
+    """Fails any batch that contains a bad ticket, like the production classifier does."""
 
-    def __init__(self) -> None:
+    def __init__(self, bad: set[str]) -> None:
+        self.bad = bad
         self.inner = Scripted()
-        self.calls = 0
+        self.batches: list[int] = []
 
     def classify_many(self, tickets: Sequence[Ticket]) -> RawBatchClassification:
-        self.calls += 1
-        if self.calls == 1:
+        self.batches.append(len(tickets))
+        if any(t.id in self.bad for t in tickets):
             raise ClassifierUnavailable()
         return self.inner.classify_many(tickets)
 
 
-def test_a_failed_batch_is_counted_as_missing_and_the_run_continues(tmp_path):
+class DropsTickets:
+    """Answers successfully but leaves some tickets out of the reply."""
+
+    def __init__(self, dropped: set[str]) -> None:
+        self.dropped = dropped
+        self.inner = Scripted()
+
+    def classify_many(self, tickets: Sequence[Ticket]) -> RawBatchClassification:
+        kept = [t for t in tickets if t.id not in self.dropped]
+        return self.inner.classify_many(kept)
+
+
+def test_one_bad_ticket_fails_alone_after_the_batch_is_retried_singly(tmp_path):
     n = MAX_BATCH_SIZE + 2
     lines = [line(id=f"T{i}") for i in range(n)]
-    classifier = FailsFirstBatch()
+    classifier = RejectsBadTickets({"T1"})
     [report] = evaluate(labeled(write(tmp_path, *lines)), classifier).splits
-    assert classifier.calls == 2
-    assert report.n_missing == MAX_BATCH_SIZE
-    # missing predictions count as wrong; they are never silently dropped
+    assert report.n_failed == 1
+    assert report.n_absent == 0
+    assert report.n_missing == 1
+    # only the bad ticket is lost; its batch-mates are scored
     assert report.scores["severity"].total == n
-    assert report.scores["severity"].correct == 2
+    assert report.scores["severity"].correct == n - 1
+    assert [m.ticket_id for m in report.misses] == ["T1", "T1", "T1"]
     assert {m.predicted for m in report.misses} == {"missing"}
+    assert all(m.confidence is None for m in report.misses)
+
+
+def test_a_ticket_left_out_of_a_successful_reply_is_counted_as_absent(tmp_path):
+    lines = [line(id="A"), line(id="B")]
+    [report] = evaluate(labeled(write(tmp_path, *lines)), DropsTickets({"B"})).splits
+    assert (report.n_failed, report.n_absent, report.n_missing) == (0, 1, 1)
+    assert (
+        report.scores["severity"].correct == 1 and report.scores["severity"].total == 2
+    )
 
 
 def test_the_report_shows_the_new_figures(tmp_path):
@@ -457,14 +482,14 @@ def test_the_report_shows_the_new_figures(tmp_path):
     assert "1 ambiguous (50%)" in text
     assert "macro-F1" in text
     assert "unavailable" in text
-    assert "missing predictions: 0" in text
+    assert "missing predictions: 0 (failed 0, absent 0)" in text
     assert "expected labels" in text
 
 
 def test_json_carries_metrics_distributions_and_missing_counts(tmp_path):
     result = evaluate(labeled(write(tmp_path, line(id="A"))), Scripted())
     split = result.to_dict()["splits"][0]
-    assert split["n_missing"] == 0
+    assert (split["n_missing"], split["n_failed"], split["n_absent"]) == (0, 0, 0)
     assert split["ambiguous_pct"] == 0.0
     assert split["distributions"]["severity"] == {"high": 1}
     severity = split["scores"]["severity"]
