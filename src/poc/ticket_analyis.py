@@ -164,7 +164,8 @@ QUESTIONS = {
 # - Qwen/Qwen2.5-0.5B-Instruct (small, fast)
 # - Qwen/Qwen3-0.6B (larger, more capable)
 
-backend = get_backend("hf", model_id="Qwen/Qwen2.5-0.5B-Instruct")
+#backend = get_backend("hf", model_id="Qwen/Qwen2.5-0.5B-Instruct")
+backend = get_backend("hf", model_id="Qwen/Qwen3-0.6B")
 
 sev_correct = cat_correct = assigned_team_correct = 0
 for ticket in SAMPLE_TICKETS:
